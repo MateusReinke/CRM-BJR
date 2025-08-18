@@ -22,7 +22,7 @@ import {
   type InsertFinancialTransaction
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, asc, count, sum, lt } from "drizzle-orm";
+import { eq, and, desc, asc, count, sum, lt, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -173,9 +173,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateOSNumber(unit: string): Promise<string> {
-    const result = await db.select({ count: count() }).from(serviceOrders).where(eq(serviceOrders.unit, unit as any));
+    const now = new Date();
+    const year = now.getFullYear().toString().slice(-2); // Last 2 digits of year
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const yearMonth = `${year}${month}`;
+    
+    // Count orders for this unit and this year-month
+    const result = await db.select({ count: count() })
+      .from(serviceOrders)
+      .where(and(
+        eq(serviceOrders.unit, unit as any),
+        sql`EXTRACT(YEAR FROM created_at) = ${now.getFullYear()}`,
+        sql`EXTRACT(MONTH FROM created_at) = ${now.getMonth() + 1}`
+      ));
+    
     const nextNumber = (result[0]?.count || 0) + 1;
-    return `${unit}-${nextNumber.toString().padStart(5, '0')}`;
+    return `${unit}-${yearMonth}-${nextNumber.toString().padStart(3, '0')}`;
   }
 
   // Appointments

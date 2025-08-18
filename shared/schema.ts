@@ -10,6 +10,16 @@ export const osStatusEnum = pgEnum('os_status', ['open', 'in_progress', 'complet
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
 export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'card', 'cash', 'bank_slip']);
 
+// Units configuration
+export const units = pgTable("units", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -199,6 +209,11 @@ export const insertFinancialTransactionSchema = createInsertSchema(financialTran
   createdAt: true,
 });
 
+export const insertUnitSchema = createInsertSchema(units).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -214,3 +229,5 @@ export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
 export type FinancialTransaction = typeof financialTransactions.$inferSelect;
 export type InsertFinancialTransaction = z.infer<typeof insertFinancialTransactionSchema>;
+export type Unit = typeof units.$inferSelect;
+export type InsertUnit = z.infer<typeof insertUnitSchema>;
