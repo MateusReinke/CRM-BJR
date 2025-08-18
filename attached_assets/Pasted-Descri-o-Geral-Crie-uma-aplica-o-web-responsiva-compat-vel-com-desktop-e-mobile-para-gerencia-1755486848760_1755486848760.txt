@@ -1,0 +1,225 @@
+Descrição Geral
+
+Crie uma aplicação web responsiva (compatível com desktop e mobile) para gerenciar a empresa BJR Centro Automotivo, que possui duas unidades físicas:
+
+São Paulo (SP1) → cor exclusiva azul
+
+São Paulo (SP2) → cor exclusiva Cinza
+
+Sorocaba (SOR) → cor exclusiva verde
+
+Visão Global (todas as unidades) → cor exclusiva vermelho
+
+O sistema deve oferecer gestão de clientes, veículos, ordens de serviço, agendamentos, estoque, financeiro e funcionários.
+Cada unidade deve ter dados separados, mas também deve existir visão consolidada.
+
+1. Requisitos Técnicos
+
+Aplicação responsiva (PC e mobile).
+
+Frontend: React.js + Tailwind CSS (interface moderna, responsiva e rápida).
+
+Backend: Node.js + Express.
+
+Banco de dados: PostgreSQL (relacional, com suporte multiunidade).
+
+Autenticação de usuários: JWT com níveis de permissão (admin, gerente, mecânico, vendedor).
+
+APIs RESTful para CRUD completo.
+
+Exportação de relatórios em PDF e Excel.
+
+Backup automático diário do banco de dados.
+
+2. Funcionalidades e Telas
+2.1 Dashboard
+
+Resumo por unidade e consolidado:
+
+Ordens de serviço abertas/concluídas.
+
+Estoque baixo/crítico.
+
+Faturamento do mês.
+
+Ranking de mecânicos e vendedores (comissões).
+
+Filtro lateral: SPI / SOR / Todas as Unidades.
+
+2.2 Clientes
+
+Formulário Criar/Editar Cliente:
+
+Nome completo
+
+CPF/CNPJ
+
+Telefone (WhatsApp)
+
+E-mail
+
+Endereço
+
+Unidade vinculada (SPI ou SOR)
+
+Observações
+
+2.3 Veículos
+
+Formulário Criar/Editar Veículo:
+
+Placa
+
+Modelo / Ano
+
+Cor
+
+Chassi
+
+Quilometragem
+
+Cliente vinculado
+
+Unidade vinculada
+
+Histórico de serviços
+
+2.4 Ordens de Serviço (OS)
+
+Número da OS deve incluir sigla da unidade (ex.: SPI-00125).
+
+Formulário Criar/Editar OS:
+
+Cliente
+
+Veículo
+
+Serviço(s) solicitado(s)
+
+Mecânico responsável (com campo % comissão por serviço)
+
+Produtos/peças usadas (estoque)
+
+Valor total
+
+Status: aberto, em execução, concluído, faturado
+
+Observações
+
+Relatórios de produtividade por mecânico, incluindo cálculo de comissão.
+
+2.5 Agendamentos
+
+Agenda visual separada por unidade.
+
+Formulário Criar/Editar Agendamento:
+
+Cliente
+
+Veículo
+
+Serviço desejado
+
+Data/Hora
+
+Unidade
+
+Mecânico responsável
+
+Observações
+
+Confirmação via WhatsApp automático (usando número da filial correspondente).
+
+2.6 Estoque
+
+Controle por unidade.
+
+Alertas de estoque baixo e crítico.
+
+Formulário Criar/Editar Produto:
+
+Código
+
+Nome / Descrição
+
+Categoria
+
+Unidade vinculada (SPI ou SOR)
+
+Quantidade atual
+
+Quantidade mínima
+
+Preço de custo
+
+Preço de venda
+
+Fornecedor
+
+2.7 Financeiro
+
+Controle de receitas e despesas por unidade.
+
+Relatórios consolidados da rede.
+
+Formulário Criar/Editar Lançamento:
+
+Tipo: Receita ou Despesa
+
+Unidade vinculada
+
+Cliente/Fornecedor
+
+Valor
+
+Forma de pagamento (Pix, Cartão, Dinheiro, Boleto)
+
+Data de vencimento/pagamento
+
+Relacionamento com OS ou Venda
+
+2.8 Administração / Funcionários
+
+Gestão de cargos, salários e comissões.
+
+Formulário Criar/Editar Funcionário:
+
+Nome completo
+
+CPF
+
+Cargo (Atendente, Mecânico, Vendedor, Gerente)
+
+Unidade vinculada (SPI ou SOR)
+
+Dados pessoais: endereço, telefone, e-mail
+
+Salário base
+
+Comissão (% por serviço – mecânicos)
+
+Comissão (% por venda – vendedores)
+
+Status (Ativo/Inativo)
+
+3. Regras de Negócio
+
+Cada unidade deve ter cor exclusiva e sigla obrigatória em OS, relatórios e estoque.
+
+O painel lateral deve permitir sempre alternar: SPI, SOR ou Todas as Unidades.
+
+Comissões de mecânicos e vendedores devem ser calculadas automaticamente em relatórios.
+
+Toda comunicação com clientes (WhatsApp/E-mail) deve usar os dados da unidade correspondente.
+
+Relatórios devem permitir filtro por unidade ou visão global.
+
+4. Diferenciais Desejados
+
+Dashboard inicial com KPIs principais.
+
+Chat interno para comunicação entre equipe.
+
+Leitura de placa via câmera (opcional).
+
+Exportação de relatórios em PDF e Excel.
