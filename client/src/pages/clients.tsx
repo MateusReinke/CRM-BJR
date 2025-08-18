@@ -32,7 +32,7 @@ export default function Clients() {
   const queryClient = useQueryClient();
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["/api/clients", selectedUnit],
+    queryKey: ["/api/clients/all"],
   });
 
   const createClientMutation = useMutation({
