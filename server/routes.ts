@@ -8,7 +8,8 @@ import {
   insertServiceOrderSchema, 
   insertAppointmentSchema, 
   insertInventorySchema, 
-  insertFinancialTransactionSchema 
+  insertFinancialTransactionSchema,
+  insertUserSchema
 } from "@shared/schema";
 
 export function registerRoutes(app: Express): Server {
@@ -276,6 +277,40 @@ export function registerRoutes(app: Express): Server {
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ error: "Failed to delete financial transaction" });
+    }
+  });
+
+  // Employees routes
+  app.get("/api/employees/:unit/:role", async (req, res) => {
+    try {
+      const { unit, role } = req.params;
+      const employees = await storage.getEmployees(
+        unit === 'all' ? undefined : unit,
+        role === 'all' ? undefined : role
+      );
+      res.json(employees);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch employees" });
+    }
+  });
+
+  app.post("/api/employees", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const employee = await storage.createEmployee(validatedData);
+      res.status(201).json(employee);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid employee data" });
+    }
+  });
+
+  app.put("/api/employees/:id", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.partial().parse(req.body);
+      const employee = await storage.updateEmployee(req.params.id, validatedData);
+      res.json(employee);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid employee data" });
     }
   });
 
