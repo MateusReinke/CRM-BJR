@@ -47,10 +47,7 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
             alt="BJR Centro Automotivo"
             className="h-12 w-auto mr-3"
           />
-          <div>
-            <h1 className="text-xl font-bold text-sidebar-foreground">BJR</h1>
-            <p className="text-xs text-sidebar-foreground/60">Centro Automotivo</p>
-          </div>
+          
         </div>
       </div>
 
