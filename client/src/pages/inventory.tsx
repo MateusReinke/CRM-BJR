@@ -35,7 +35,7 @@ export default function InventoryPage() {
   const queryClient = useQueryClient();
 
   const { data: inventory = [], isLoading } = useQuery({
-    queryKey: ["/api/inventory", selectedUnit],
+    queryKey: ["/api/inventory/all"],
   });
 
   const createItemMutation = useMutation({

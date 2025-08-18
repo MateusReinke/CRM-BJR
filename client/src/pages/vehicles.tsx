@@ -32,11 +32,11 @@ export default function Vehicles() {
   const queryClient = useQueryClient();
 
   const { data: vehicles = [], isLoading } = useQuery({
-    queryKey: ["/api/vehicles", selectedUnit],
+    queryKey: ["/api/vehicles/all"],
   });
 
   const { data: clients = [] } = useQuery({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients/all"],
   });
 
   const createVehicleMutation = useMutation({
