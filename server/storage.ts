@@ -33,6 +33,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  // Employees management
+  getEmployees(unit?: string, role?: string): Promise<User[]>;
+  createEmployee(employee: InsertUser): Promise<User>;
+  updateEmployee(id: string, employee: Partial<InsertUser>): Promise<User>;
+  
   // Clients
   getClients(unit?: string): Promise<Client[]>;
   createClient(client: InsertClient): Promise<Client>;
@@ -104,6 +109,42 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  // Employees management
+  async getEmployees(unit?: string, role?: string): Promise<User[]> {
+    let query = db.select().from(users);
+    
+    const conditions = [];
+    if (unit && unit !== 'all') {
+      conditions.push(eq(users.unit, unit as any));
+    }
+    if (role && role !== 'all') {
+      conditions.push(eq(users.role, role as any));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(users.createdAt));
+  }
+
+  async createEmployee(insertEmployee: InsertUser): Promise<User> {
+    const [employee] = await db
+      .insert(users)
+      .values(insertEmployee)
+      .returning();
+    return employee;
+  }
+
+  async updateEmployee(id: string, employee: Partial<InsertUser>): Promise<User> {
+    const [updatedEmployee] = await db
+      .update(users)
+      .set(employee)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedEmployee;
   }
 
   // Clients

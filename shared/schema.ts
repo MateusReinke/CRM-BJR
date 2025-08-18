@@ -5,7 +5,7 @@ import { z } from "zod";
 
 // Enums
 export const unitEnum = pgEnum('unit', ['SP1', 'SP2', 'SOR']);
-export const roleEnum = pgEnum('role', ['admin', 'manager', 'mechanic', 'seller']);
+export const roleEnum = pgEnum('role', ['admin', 'manager', 'mechanic', 'seller', 'hr']);
 export const osStatusEnum = pgEnum('os_status', ['open', 'in_progress', 'completed', 'billed']);
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
 export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'card', 'cash', 'bank_slip']);

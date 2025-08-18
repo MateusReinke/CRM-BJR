@@ -15,12 +15,14 @@ import Appointments from "@/pages/appointments";
 import Inventory from "@/pages/inventory";
 import Financial from "@/pages/financial";
 import Employees from "@/pages/employees";
+import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Dashboard} />
+      <Route path="/" component={Landing} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={Clients} />
       <ProtectedRoute path="/vehicles" component={Vehicles} />
       <ProtectedRoute path="/service-orders" component={ServiceOrders} />
