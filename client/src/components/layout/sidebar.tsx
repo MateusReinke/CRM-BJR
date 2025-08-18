@@ -42,9 +42,11 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
       {/* Logo Section */}
       <div className="flex items-center flex-shrink-0 px-4 mb-6">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center mr-3">
-            <Car className="text-primary-foreground text-lg" />
-          </div>
+          <img 
+            src="https://static.wixstatic.com/media/c97016_f40c4aa13f3045d580bd10f6983b15be~mv2.png/v1/fill/w_325,h_147,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/image-removebg-preview%20-%202024-11-05T142157_349.png" 
+            alt="BJR Centro Automotivo"
+            className="h-12 w-auto mr-3"
+          />
           <div>
             <h1 className="text-xl font-bold text-sidebar-foreground">BJR</h1>
             <p className="text-xs text-sidebar-foreground/60">Centro Automotivo</p>
