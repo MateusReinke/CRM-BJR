@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -12,14 +12,60 @@ import {
   insertUserSchema
 } from "@shared/schema";
 
+// Authentication middleware
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  next();
+}
+
+// Authorization middleware for roles
+function requireRole(allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    
+    next();
+  };
+}
+
+// Unit access middleware - ensures user can only access their unit data (unless admin)
+function requireUnitAccess(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  const requestedUnit = req.query.unit as string || req.body.unit;
+  
+  // Admins can access all units
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  
+  // Other users can only access their own unit or 'all' (which will be filtered by their unit)
+  if (requestedUnit && requestedUnit !== 'all' && requestedUnit !== req.user.unit) {
+    return res.status(403).json({ error: "Access denied to this unit" });
+  }
+  
+  next();
+}
+
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // Dashboard KPIs
-  app.get("/api/dashboard/kpis", async (req, res) => {
+  app.get("/api/dashboard/kpis", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const kpis = await storage.getDashboardKPIs(unit);
+      // Non-admins can only see their own unit data
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const kpis = await storage.getDashboardKPIs(effectiveUnit);
       res.json(kpis);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard KPIs" });
@@ -27,19 +73,24 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Clients routes
-  app.get("/api/clients", async (req, res) => {
+  app.get("/api/clients", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const clients = await storage.getClients(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const clients = await storage.getClients(effectiveUnit);
       res.json(clients);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch clients" });
     }
   });
 
-  app.post("/api/clients", async (req, res) => {
+  app.post("/api/clients", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertClientSchema.parse(req.body);
+      // Non-admins can only create clients for their unit
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const client = await storage.createClient(validatedData);
       res.status(201).json(client);
     } catch (error) {
@@ -47,7 +98,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/clients/:id", async (req, res) => {
+  app.put("/api/clients/:id", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertClientSchema.partial().parse(req.body);
       const client = await storage.updateClient(req.params.id, validatedData);
@@ -57,7 +108,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/clients/:id", async (req, res) => {
+  app.delete("/api/clients/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteClient(req.params.id);
       res.sendStatus(204);
@@ -67,19 +118,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Vehicles routes
-  app.get("/api/vehicles", async (req, res) => {
+  app.get("/api/vehicles", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const vehicles = await storage.getVehicles(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const vehicles = await storage.getVehicles(effectiveUnit);
       res.json(vehicles);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch vehicles" });
     }
   });
 
-  app.post("/api/vehicles", async (req, res) => {
+  app.post("/api/vehicles", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertVehicleSchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const vehicle = await storage.createVehicle(validatedData);
       res.status(201).json(vehicle);
     } catch (error) {
@@ -87,7 +142,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/vehicles/:id", async (req, res) => {
+  app.put("/api/vehicles/:id", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertVehicleSchema.partial().parse(req.body);
       const vehicle = await storage.updateVehicle(req.params.id, validatedData);
@@ -97,7 +152,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/vehicles/:id", async (req, res) => {
+  app.delete("/api/vehicles/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteVehicle(req.params.id);
       res.sendStatus(204);
@@ -107,19 +162,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Service Orders routes
-  app.get("/api/service-orders", async (req, res) => {
+  app.get("/api/service-orders", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const orders = await storage.getServiceOrders(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const orders = await storage.getServiceOrders(effectiveUnit);
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch service orders" });
     }
   });
 
-  app.post("/api/service-orders", async (req, res) => {
+  app.post("/api/service-orders", requireAuth, requireRole(['admin', 'manager', 'mechanic']), async (req, res) => {
     try {
       const validatedData = insertServiceOrderSchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       // Generate OS number
       const osNumber = await storage.generateOSNumber(validatedData.unit);
       const orderWithNumber = { ...validatedData, osNumber };
@@ -130,7 +189,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/service-orders/:id", async (req, res) => {
+  app.put("/api/service-orders/:id", requireAuth, requireRole(['admin', 'manager', 'mechanic']), async (req, res) => {
     try {
       const validatedData = insertServiceOrderSchema.partial().parse(req.body);
       const order = await storage.updateServiceOrder(req.params.id, validatedData);
@@ -140,7 +199,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/service-orders/:id", async (req, res) => {
+  app.delete("/api/service-orders/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteServiceOrder(req.params.id);
       res.sendStatus(204);
@@ -150,19 +209,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Appointments routes
-  app.get("/api/appointments", async (req, res) => {
+  app.get("/api/appointments", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const appointments = await storage.getAppointments(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const appointments = await storage.getAppointments(effectiveUnit);
       res.json(appointments);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch appointments" });
     }
   });
 
-  app.post("/api/appointments", async (req, res) => {
+  app.post("/api/appointments", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertAppointmentSchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const appointment = await storage.createAppointment(validatedData);
       res.status(201).json(appointment);
     } catch (error) {
@@ -170,7 +233,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/appointments/:id", async (req, res) => {
+  app.put("/api/appointments/:id", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertAppointmentSchema.partial().parse(req.body);
       const appointment = await storage.updateAppointment(req.params.id, validatedData);
@@ -180,7 +243,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/appointments/:id", async (req, res) => {
+  app.delete("/api/appointments/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteAppointment(req.params.id);
       res.sendStatus(204);
@@ -190,30 +253,35 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Inventory routes
-  app.get("/api/inventory", async (req, res) => {
+  app.get("/api/inventory", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const inventory = await storage.getInventory(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const inventory = await storage.getInventory(effectiveUnit);
       res.json(inventory);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch inventory" });
     }
   });
 
-  app.get("/api/inventory/alerts", async (req, res) => {
+  app.get("/api/inventory/alerts", requireAuth, requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const critical = await storage.getCriticalStockItems(unit);
-      const low = await storage.getLowStockItems(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const critical = await storage.getCriticalStockItems(effectiveUnit);
+      const low = await storage.getLowStockItems(effectiveUnit);
       res.json({ critical, low });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stock alerts" });
     }
   });
 
-  app.post("/api/inventory", async (req, res) => {
+  app.post("/api/inventory", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       const validatedData = insertInventorySchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const item = await storage.createInventoryItem(validatedData);
       res.status(201).json(item);
     } catch (error) {
@@ -221,7 +289,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/inventory/:id", async (req, res) => {
+  app.put("/api/inventory/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       const validatedData = insertInventorySchema.partial().parse(req.body);
       const item = await storage.updateInventoryItem(req.params.id, validatedData);
@@ -231,7 +299,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/inventory/:id", async (req, res) => {
+  app.delete("/api/inventory/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteInventoryItem(req.params.id);
       res.sendStatus(204);
@@ -241,19 +309,23 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Financial routes
-  app.get("/api/financial", async (req, res) => {
+  app.get("/api/financial", requireAuth, requireRole(['admin', 'manager']), requireUnitAccess, async (req, res) => {
     try {
       const unit = req.query.unit as string;
-      const transactions = await storage.getFinancialTransactions(unit);
+      const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
+      const transactions = await storage.getFinancialTransactions(effectiveUnit);
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch financial transactions" });
     }
   });
 
-  app.post("/api/financial", async (req, res) => {
+  app.post("/api/financial", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       const validatedData = insertFinancialTransactionSchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const transaction = await storage.createFinancialTransaction(validatedData);
       res.status(201).json(transaction);
     } catch (error) {
@@ -261,7 +333,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/financial/:id", async (req, res) => {
+  app.put("/api/financial/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       const validatedData = insertFinancialTransactionSchema.partial().parse(req.body);
       const transaction = await storage.updateFinancialTransaction(req.params.id, validatedData);
@@ -271,7 +343,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/financial/:id", async (req, res) => {
+  app.delete("/api/financial/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
       await storage.deleteFinancialTransaction(req.params.id);
       res.sendStatus(204);
@@ -281,11 +353,12 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Employees routes
-  app.get("/api/employees/:unit/:role", async (req, res) => {
+  app.get("/api/employees/:unit/:role", requireAuth, requireRole(['admin', 'manager', 'hr']), async (req, res) => {
     try {
       const { unit, role } = req.params;
+      const effectiveUnit = req.user?.role === 'admin' ? (unit === 'all' ? undefined : unit) : req.user?.unit;
       const employees = await storage.getEmployees(
-        unit === 'all' ? undefined : unit,
+        effectiveUnit,
         role === 'all' ? undefined : role
       );
       res.json(employees);
@@ -294,9 +367,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/employees", async (req, res) => {
+  app.post("/api/employees", requireAuth, requireRole(['admin', 'hr']), async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
+      if (req.user?.role !== 'admin') {
+        validatedData.unit = req.user?.unit as any;
+      }
       const employee = await storage.createEmployee(validatedData);
       res.status(201).json(employee);
     } catch (error) {
@@ -304,7 +380,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/employees/:id", async (req, res) => {
+  app.put("/api/employees/:id", requireAuth, requireRole(['admin', 'hr']), async (req, res) => {
     try {
       const validatedData = insertUserSchema.partial().parse(req.body);
       const employee = await storage.updateEmployee(req.params.id, validatedData);
