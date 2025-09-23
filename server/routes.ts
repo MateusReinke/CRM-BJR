@@ -11,6 +11,7 @@ import {
   insertFinancialTransactionSchema,
   insertUserSchema
 } from "@shared/schema";
+import { handleError, successResponse, AppError } from "./utils/errorHandler";
 
 // Authentication middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -66,9 +67,9 @@ export function registerRoutes(app: Express): Server {
       // Non-admins can only see their own unit data
       const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
       const kpis = await storage.getDashboardKPIs(effectiveUnit);
-      res.json(kpis);
+      res.json(successResponse(kpis));
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch dashboard KPIs" });
+      handleError(error, res);
     }
   });
 
@@ -78,9 +79,9 @@ export function registerRoutes(app: Express): Server {
       const unit = req.query.unit as string;
       const effectiveUnit = req.user?.role === 'admin' ? unit : req.user?.unit;
       const clients = await storage.getClients(effectiveUnit);
-      res.json(clients);
+      res.json(successResponse(clients));
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch clients" });
+      handleError(error, res);
     }
   });
 
@@ -92,28 +93,43 @@ export function registerRoutes(app: Express): Server {
         validatedData.unit = req.user?.unit as any;
       }
       const client = await storage.createClient(validatedData);
-      res.status(201).json(client);
+      res.status(201).json(successResponse(client));
     } catch (error) {
-      res.status(400).json({ error: "Invalid client data" });
+      handleError(error, res);
     }
   });
 
   app.put("/api/clients/:id", requireAuth, requireRole(['admin', 'manager', 'seller']), async (req, res) => {
     try {
       const validatedData = insertClientSchema.partial().parse(req.body);
+      
+      if (!validatedData || Object.keys(validatedData).length === 0) {
+        throw new AppError("Nenhum dado fornecido para atualização", 400);
+      }
+      
       const client = await storage.updateClient(req.params.id, validatedData);
-      res.json(client);
+      
+      if (!client) {
+        throw new AppError("Cliente não encontrado", 404);
+      }
+      
+      res.json(successResponse(client));
     } catch (error) {
-      res.status(400).json({ error: "Invalid client data" });
+      handleError(error, res);
     }
   });
 
   app.delete("/api/clients/:id", requireAuth, requireRole(['admin', 'manager']), async (req, res) => {
     try {
-      await storage.deleteClient(req.params.id);
-      res.sendStatus(204);
+      const deleted = await storage.deleteClient(req.params.id);
+      
+      if (!deleted) {
+        throw new AppError("Cliente não encontrado", 404);
+      }
+      
+      res.json(successResponse({ message: "Cliente excluído com sucesso" }));
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete client" });
+      handleError(error, res);
     }
   });
 
