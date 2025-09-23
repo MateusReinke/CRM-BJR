@@ -56,13 +56,13 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
         <label className="block text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wide mb-2">
           Unidade
         </label>
-        <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-          <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
+        <Select value={selectedUnit} onValueChange={setSelectedUnit} data-testid="select-unit">
+          <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground" data-testid="trigger-unit-select">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent data-testid="content-unit-select">
             {unitOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem key={option.value} value={option.value} data-testid={`option-unit-${option.value}`}>
                 {option.label}
               </SelectItem>
             ))}
@@ -71,7 +71,7 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 pb-4 space-y-1">
+      <nav className="flex-1 px-2 pb-4 space-y-1" data-testid="nav-main">
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;
@@ -85,6 +85,7 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
                   isActive && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                 )}
                 onClick={() => setMobileMenuOpen(false)}
+                data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 <Icon className="mr-3 h-4 w-4" />
                 {item.name}
@@ -94,7 +95,7 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
         })}
 
         {/* Admin Section */}
-        <div className="pt-4">
+        <div className="pt-4" data-testid="nav-admin-section">
           <p className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wide px-2 mb-2">
             Administração
           </p>
@@ -112,6 +113,7 @@ export default function Sidebar({ selectedUnit, setSelectedUnit, mobileMenuOpen,
                       isActive && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                     )}
                     onClick={() => setMobileMenuOpen(false)}
+                    data-testid={`nav-admin-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <Icon className="mr-3 h-4 w-4" />
                     {item.name}
