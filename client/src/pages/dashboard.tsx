@@ -7,7 +7,7 @@ import TopMechanics from "@/components/dashboard/top-mechanics";
 import UnitPerformance from "@/components/dashboard/unit-performance";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, AlertTriangle, DollarSign, Calendar, Plus, Download } from "lucide-react";
-import { useState } from "react";
+import { useUnit } from "@/contexts/unit-context";
 
 interface DashboardKPIs {
   openOrders: number;
@@ -19,10 +19,19 @@ interface DashboardKPIs {
 }
 
 export default function Dashboard() {
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
+  const { selectedUnit } = useUnit();
 
   const { data: kpis, isLoading } = useQuery<DashboardKPIs>({
     queryKey: ["/api/dashboard/kpis", selectedUnit],
+    queryFn: async () => {
+      const res = await fetch(`/api/dashboard/kpis?unit=${selectedUnit}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return res.json();
+    }
   });
 
   const getUnitName = (unit: string) => {

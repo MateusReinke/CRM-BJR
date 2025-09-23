@@ -1,13 +1,14 @@
 import { useState } from "react";
 import Sidebar from "./sidebar";
 import Header from "./header";
+import { useUnit } from "@/contexts/unit-context";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
+  const { selectedUnit, setSelectedUnit } = useUnit();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
