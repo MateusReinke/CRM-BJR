@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Car, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useUnit } from "@/contexts/unit-context";
 import type { Vehicle, InsertVehicle, Client } from "@shared/schema";
 
 export default function Vehicles() {
+  const { selectedUnit } = useUnit();
   const [open, setOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [formData, setFormData] = useState<InsertVehicle>({
     plate: "",
     model: "",
@@ -31,12 +32,30 @@ export default function Vehicles() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: vehicles = [], isLoading } = useQuery({
-    queryKey: ["/api/vehicles/all"],
+  const { data: vehicles = [], isLoading } = useQuery<Vehicle[]>({
+    queryKey: ["/api/vehicles", selectedUnit],
+    queryFn: async () => {
+      const res = await fetch(`/api/vehicles?unit=${selectedUnit}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return res.json();
+    }
   });
 
-  const { data: clients = [] } = useQuery({
-    queryKey: ["/api/clients/all"],
+  const { data: clients = [] } = useQuery<Client[]>({
+    queryKey: ["/api/clients", selectedUnit],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients?unit=${selectedUnit}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return res.json();
+    }
   });
 
   const createVehicleMutation = useMutation({

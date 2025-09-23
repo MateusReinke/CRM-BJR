@@ -12,12 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Phone, Mail, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useUnit } from "@/contexts/unit-context";
 import type { Client, InsertClient } from "@shared/schema";
 
 export default function Clients() {
+  const { selectedUnit } = useUnit();
   const [open, setOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [formData, setFormData] = useState<InsertClient>({
     name: "",
     cpfCnpj: "",
@@ -31,8 +32,17 @@ export default function Clients() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["/api/clients/all"],
+  const { data: clients = [], isLoading } = useQuery<Client[]>({
+    queryKey: ["/api/clients", selectedUnit],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients?unit=${selectedUnit}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return res.json();
+    }
   });
 
   const createClientMutation = useMutation({
