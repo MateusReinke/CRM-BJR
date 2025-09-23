@@ -28,6 +28,16 @@ import connectPg from "connect-pg-simple";
 
 const PostgresSessionStore = connectPg(session);
 
+// Dashboard KPIs interface
+export interface DashboardKPIs {
+  openOrders: number;
+  inProgressOrders: number;
+  monthlyRevenue: number;
+  criticalStock: number;
+  lowStock: number;
+  todayAppointments: number;
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -78,13 +88,13 @@ export interface IStorage {
   deleteFinancialTransaction(id: string): Promise<void>;
   
   // Dashboard KPIs
-  getDashboardKPIs(unit?: string): Promise<any>;
+  getDashboardKPIs(unit?: string): Promise<DashboardKPIs>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -113,8 +123,6 @@ export class DatabaseStorage implements IStorage {
 
   // Employees management
   async getEmployees(unit?: string, role?: string): Promise<User[]> {
-    let query = db.select().from(users);
-    
     const conditions = [];
     if (unit && unit !== 'all') {
       conditions.push(eq(users.unit, unit as any));
@@ -124,10 +132,10 @@ export class DatabaseStorage implements IStorage {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(users).where(and(...conditions)).orderBy(desc(users.createdAt));
     }
     
-    return await query.orderBy(desc(users.createdAt));
+    return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   async createEmployee(insertEmployee: InsertUser): Promise<User> {
@@ -315,7 +323,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Dashboard KPIs
-  async getDashboardKPIs(unit?: string): Promise<any> {
+  async getDashboardKPIs(unit?: string): Promise<DashboardKPIs> {
     const whereCondition = unit && unit !== 'all' ? eq(serviceOrders.unit, unit as any) : undefined;
     
     // Open orders

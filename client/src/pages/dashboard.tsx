@@ -9,10 +9,19 @@ import { Button } from "@/components/ui/button";
 import { ClipboardList, AlertTriangle, DollarSign, Calendar, Plus, Download } from "lucide-react";
 import { useState } from "react";
 
+interface DashboardKPIs {
+  openOrders: number;
+  inProgressOrders: number;
+  monthlyRevenue: number;
+  criticalStock: number;
+  lowStock: number;
+  todayAppointments: number;
+}
+
 export default function Dashboard() {
   const [selectedUnit, setSelectedUnit] = useState<string>("all");
 
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading } = useQuery<DashboardKPIs>({
     queryKey: ["/api/dashboard/kpis", selectedUnit],
   });
 
