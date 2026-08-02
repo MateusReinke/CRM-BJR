@@ -8,8 +8,13 @@
 FROM node:22-slim
 WORKDIR /app
 
-# Installed before NODE_ENV=production is set below, so devDependencies are
-# still included.
+# Force a non-production NODE_ENV for install/build, overriding whatever the
+# platform injects as a build-time env var (Coolify passes every configured
+# env var - including NODE_ENV=production - into the build stage by default).
+# With NODE_ENV=production, `npm ci` skips devDependencies, so vite/esbuild
+# go missing and `npm run build` fails with "vite: not found".
+ENV NODE_ENV=development
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -19,8 +24,8 @@ RUN npm run build
 RUN useradd --system --create-home appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Only applies from here on - doesn't affect the npm ci/build steps above,
-# but is what makes the server pick serveStatic() over Vite's dev middleware.
+# Only takes effect from here on (for the actual running container) - this is
+# what makes the server pick serveStatic() over Vite's dev middleware.
 ENV NODE_ENV=production
 
 EXPOSE 5000
