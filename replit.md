@@ -85,6 +85,12 @@ Preferred communication style: Simple, everyday language.
 4. `npm run db:seed` to create the three starter stores (SP1/SP2/SOR), default expense/income categories, and an initial `admin`/`admin123` login (change this password before going anywhere near production).
 5. `npm run dev`.
 
+## Deployment (Docker / Coolify)
+
+The `Dockerfile` at the repo root builds and runs the app as a single container (`npm run build` then `node dist/index.js`, serving both the API and the built frontend on `$PORT`, default 5000). It deliberately keeps devDependencies in the final image (drizzle-kit, tsx) so `npm run db:push` / `npm run db:seed` can be run once against production via the platform's "execute a command in this container" feature - there's no separate migrations workflow yet.
+
+Required environment variables are documented in `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `PORT`, `NODE_ENV=production`. `GET /api/health` checks both the process and the database connection, for the platform's health check.
+
 ## Migrating an existing deployment off the old unit enum
 
 Older deployments had a hardcoded `unit` Postgres enum (`SP1`/`SP2`/`SOR`) directly on every table instead of a `stores` table + `storeId` foreign key. There is no automatic data migration bundled for this - `npm run db:push` will show destructive statements if pointed at a database still on the old shape. Before running it against a database with real data, back it up and manually: create the `stores` rows first (matching the old enum values so `code` lines up), then backfill each table's new `storeId` column from its old `unit` column by joining on `stores.code`, then drop the old column/enum. Do this by hand against a copy of the data first.

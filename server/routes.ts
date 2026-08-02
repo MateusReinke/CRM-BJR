@@ -16,6 +16,7 @@ import {
   createInvoiceSchema,
 } from "@shared/schema";
 import { handleError, successResponse, AppError } from "./utils/errorHandler";
+import { pool } from "./db";
 
 // Authentication middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -69,6 +70,17 @@ function effectiveStoreId(req: Request): string | undefined {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Unauthenticated health check for container orchestrators (Docker/Coolify)
+  // to know when the app - and its database connection - is actually ready.
+  app.get("/api/health", async (_req, res) => {
+    try {
+      await pool.query("SELECT 1");
+      res.json({ status: "ok" });
+    } catch (error) {
+      res.status(503).json({ status: "error", error: (error as Error).message });
+    }
+  });
+
   setupAuth(app);
 
   // Dashboard KPIs
