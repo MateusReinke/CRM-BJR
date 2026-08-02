@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/components/ui/theme-provider";
-import { UnitProvider } from "@/contexts/unit-context";
+import { StoreProvider } from "@/contexts/store-context";
 import { ProtectedRoute } from "./lib/protected-route";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
@@ -15,6 +15,8 @@ import ServiceOrders from "@/pages/service-orders";
 import Appointments from "@/pages/appointments";
 import Inventory from "@/pages/inventory";
 import Financial from "@/pages/financial";
+import Invoices from "@/pages/invoices";
+import Stores from "@/pages/stores";
 import Employees from "@/pages/employees";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -30,6 +32,8 @@ function Router() {
       <ProtectedRoute path="/appointments" component={Appointments} />
       <ProtectedRoute path="/inventory" component={Inventory} />
       <ProtectedRoute path="/financial" component={Financial} />
+      <ProtectedRoute path="/invoices" component={Invoices} />
+      <ProtectedRoute path="/stores" component={Stores} />
       <ProtectedRoute path="/employees" component={Employees} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
@@ -42,12 +46,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="bjr-theme">
         <AuthProvider>
-          <UnitProvider>
+          <StoreProvider>
             <TooltipProvider>
               <Toaster />
               <Router />
             </TooltipProvider>
-          </UnitProvider>
+          </StoreProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

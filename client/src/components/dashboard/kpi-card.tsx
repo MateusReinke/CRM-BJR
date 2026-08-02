@@ -5,21 +5,21 @@ import { LucideIcon } from "lucide-react";
 interface KpiCardProps {
   title: string;
   value: string | number;
-  change: string;
-  changeType: "positive" | "negative";
+  change?: string;
+  changeType?: "positive" | "negative";
   icon: LucideIcon;
   iconColor: string;
   subtitle?: string;
 }
 
-export default function KpiCard({ 
-  title, 
-  value, 
-  change, 
-  changeType, 
-  icon: Icon, 
-  iconColor, 
-  subtitle 
+export default function KpiCard({
+  title,
+  value,
+  change,
+  changeType,
+  icon: Icon,
+  iconColor,
+  subtitle
 }: KpiCardProps) {
   return (
     <Card className="border border-border">
@@ -39,19 +39,21 @@ export default function KpiCard({
                 <div className="text-2xl font-semibold text-foreground">
                   {value}
                 </div>
-                <div className={`ml-2 flex items-baseline text-sm font-semibold ${
-                  changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {changeType === 'positive' ? (
-                    <ArrowUp className="h-3 w-3" />
-                  ) : (
-                    <ArrowDown className="h-3 w-3" />
-                  )}
-                  <span className="sr-only">
-                    {changeType === 'positive' ? 'Increased by' : 'Decreased by'}
-                  </span>
-                  {change}
-                </div>
+                {change && (
+                  <div className={`ml-2 flex items-baseline text-sm font-semibold ${
+                    changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {changeType === 'positive' ? (
+                      <ArrowUp className="h-3 w-3" />
+                    ) : (
+                      <ArrowDown className="h-3 w-3" />
+                    )}
+                    <span className="sr-only">
+                      {changeType === 'positive' ? 'Increased by' : 'Decreased by'}
+                    </span>
+                    {change}
+                  </div>
+                )}
               </dd>
             </dl>
           </div>

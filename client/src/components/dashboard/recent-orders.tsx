@@ -3,15 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "wouter";
+import { useStore } from "@/contexts/store-context";
+import type { ServiceOrder, Client, Vehicle } from "@shared/schema";
 
 interface RecentOrdersProps {
-  selectedUnit: string;
+  selectedStoreId: string;
 }
 
-export default function RecentOrders({ selectedUnit }: RecentOrdersProps) {
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["/api/service-orders", selectedUnit],
+export default function RecentOrders({ selectedStoreId }: RecentOrdersProps) {
+  const { getStoreColor } = useStore();
+
+  const { data: orders = [], isLoading } = useQuery<ServiceOrder[]>({
+    queryKey: ["/api/service-orders", { storeId: selectedStoreId }],
   });
+  const { data: clients = [] } = useQuery<Client[]>({
+    queryKey: ["/api/clients", { storeId: selectedStoreId }],
+  });
+  const { data: vehicles = [] } = useQuery<Vehicle[]>({
+    queryKey: ["/api/vehicles", { storeId: selectedStoreId }],
+  });
+
+  const clientsById = new Map(clients.map(c => [c.id, c]));
+  const vehiclesById = new Map(vehicles.map(v => [v.id, v]));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -40,19 +53,6 @@ export default function RecentOrders({ selectedUnit }: RecentOrdersProps) {
         return 'Faturado';
       default:
         return status;
-    }
-  };
-
-  const getUnitColor = (unit: string) => {
-    switch (unit) {
-      case 'SP1':
-        return 'bg-unit-sp1';
-      case 'SP2':
-        return 'bg-unit-sp2';
-      case 'SOR':
-        return 'bg-unit-sor';
-      default:
-        return 'bg-gray-500';
     }
   };
 
@@ -89,32 +89,47 @@ export default function RecentOrders({ selectedUnit }: RecentOrdersProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.slice(0, 5).map((order: any) => (
-              <TableRow key={order.id} className="hover:bg-muted/50">
-                <TableCell className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${getUnitColor(order.unit)}`} />
-                    <span className="text-sm font-medium text-foreground">
-                      {order.osNumber}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="px-6 py-4 text-sm text-foreground">
-                  Cliente
-                </TableCell>
-                <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                  Veículo
-                </TableCell>
-                <TableCell className="px-6 py-4">
-                  <Badge className={getStatusColor(order.status)}>
-                    {getStatusText(order.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="px-6 py-4 text-sm font-medium text-foreground">
-                  R$ {Number(order.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {orders.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                  Nenhuma ordem de serviço encontrada
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              orders.slice(0, 5).map((order) => {
+                const vehicle = vehiclesById.get(order.vehicleId);
+                const client = clientsById.get(order.clientId);
+                return (
+                  <TableRow key={order.id} className="hover:bg-muted/50">
+                    <TableCell className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div
+                          className="w-2 h-2 rounded-full mr-2"
+                          style={{ backgroundColor: getStoreColor(order.storeId) }}
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          {order.osNumber}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-foreground">
+                      {client?.name || '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                      {vehicle ? `${vehicle.plate} - ${vehicle.model}` : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge className={getStatusColor(order.status)}>
+                        {getStatusText(order.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-medium text-foreground">
+                      R$ {Number(order.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </CardContent>

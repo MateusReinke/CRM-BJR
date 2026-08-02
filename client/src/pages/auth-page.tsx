@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Wrench, Users, BarChart3 } from "lucide-react";
+
+interface PublicStore {
+  id: string;
+  code: string;
+  name: string;
+  color: string;
+}
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -17,9 +25,20 @@ export default function AuthPage() {
     password: "",
     name: "",
     email: "",
-    role: "mechanic" as const,
-    unit: "SP1" as const,
+    storeId: "",
   });
+
+  // Public directory (no fiscal data) so a new account can pick which store
+  // it belongs to before logging in. Role is always assigned server-side.
+  const { data: publicStores = [] } = useQuery<PublicStore[]>({
+    queryKey: ["/api/stores/public"],
+  });
+
+  useEffect(() => {
+    if (!registerData.storeId && publicStores.length > 0) {
+      setRegisterData((prev) => ({ ...prev, storeId: publicStores[0].id }));
+    }
+  }, [publicStores, registerData.storeId]);
 
   // Redirect if already logged in
   if (user) {
@@ -150,36 +169,25 @@ export default function AuthPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="reg-role">Cargo</Label>
-                      <Select value={registerData.role} onValueChange={(value: any) => setRegisterData({ ...registerData, role: value })}>
+                      <Label htmlFor="reg-store">Loja</Label>
+                      <Select value={registerData.storeId} onValueChange={(value) => setRegisterData({ ...registerData, storeId: value })}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione a loja" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="manager">Gerente</SelectItem>
-                          <SelectItem value="mechanic">Mecânico</SelectItem>
-                          <SelectItem value="seller">Vendedor</SelectItem>
+                          {publicStores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Sua conta será criada como Mecânico. Um administrador pode alterar seu cargo depois em Funcionários.
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="reg-unit">Unidade</Label>
-                      <Select value={registerData.unit} onValueChange={(value: any) => setRegisterData({ ...registerData, unit: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SP1">São Paulo SP1</SelectItem>
-                          <SelectItem value="SP2">São Paulo SP2</SelectItem>
-                          <SelectItem value="SOR">Sorocaba SOR</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={registerMutation.isPending}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={registerMutation.isPending || !registerData.storeId}
                     >
                       {registerMutation.isPending ? "Criando..." : "Criar Conta"}
                     </Button>

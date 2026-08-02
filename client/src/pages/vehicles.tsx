@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Car, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useUnit } from "@/contexts/unit-context";
+import { useStore } from "@/contexts/store-context";
 import type { Vehicle, InsertVehicle, Client } from "@shared/schema";
 
 export default function Vehicles() {
-  const { selectedUnit } = useUnit();
+  const { stores, selectedStoreId, setSelectedStoreId, getStoreName, getStoreColor } = useStore();
   const [open, setOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState<InsertVehicle>({
@@ -26,36 +26,18 @@ export default function Vehicles() {
     chassis: "",
     mileage: 0,
     clientId: "",
-    unit: "SP1",
+    storeId: "",
   });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: vehicles = [], isLoading } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles", selectedUnit],
-    queryFn: async () => {
-      const res = await fetch(`/api/vehicles?unit=${selectedUnit}`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      return res.json();
-    }
+  const { data: vehicles = [], isLoading } = useQuery<(Vehicle & { client?: Client })[]>({
+    queryKey: ["/api/vehicles", { storeId: selectedStoreId }],
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
-    queryKey: ["/api/clients", selectedUnit],
-    queryFn: async () => {
-      const res = await fetch(`/api/clients?unit=${selectedUnit}`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      return res.json();
-    }
+    queryKey: ["/api/clients", { storeId: selectedStoreId }],
   });
 
   const createVehicleMutation = useMutation({
@@ -69,8 +51,8 @@ export default function Vehicles() {
       resetForm();
       toast({ title: "Veículo criado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao criar veículo", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao criar veículo", description: error.message, variant: "destructive" });
     },
   });
 
@@ -85,8 +67,8 @@ export default function Vehicles() {
       resetForm();
       toast({ title: "Veículo atualizado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao atualizar veículo", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar veículo", description: error.message, variant: "destructive" });
     },
   });
 
@@ -98,8 +80,8 @@ export default function Vehicles() {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       toast({ title: "Veículo excluído com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao excluir veículo", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao excluir veículo", description: error.message, variant: "destructive" });
     },
   });
 
@@ -112,7 +94,7 @@ export default function Vehicles() {
       chassis: "",
       mileage: 0,
       clientId: "",
-      unit: "SP1",
+      storeId: selectedStoreId !== 'all' ? selectedStoreId : (stores[0]?.id || ""),
     });
     setEditingVehicle(null);
   };
@@ -136,7 +118,7 @@ export default function Vehicles() {
       chassis: vehicle.chassis || "",
       mileage: vehicle.mileage || 0,
       clientId: vehicle.clientId,
-      unit: vehicle.unit,
+      storeId: vehicle.storeId,
     });
     setOpen(true);
   };
@@ -147,26 +129,8 @@ export default function Vehicles() {
     }
   };
 
-  const getUnitColor = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return '#2563eb';
-      case 'SP2': return '#000000';
-      case 'SOR': return '#16a34a';
-      default: return '#6b7280';
-    }
-  };
-
-  const getUnitName = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return 'São Paulo SP1';
-      case 'SP2': return 'São Paulo SP2';
-      case 'SOR': return 'Sorocaba SOR';
-      default: return unit;
-    }
-  };
-
   const getClientName = (clientId: string) => {
-    const client = clients.find((c: Client) => c.id === clientId);
+    const client = clients.find((c) => c.id === clientId);
     return client?.name || "Cliente não encontrado";
   };
 
@@ -178,20 +142,20 @@ export default function Vehicles() {
             <h1 className="text-2xl font-bold text-foreground">Veículos</h1>
             <p className="text-muted-foreground">Gerencie os veículos dos clientes</p>
           </div>
-          
+
           <div className="flex gap-4 items-center">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">🌐 Todas as Unidades</SelectItem>
-                <SelectItem value="SP1">🔵 São Paulo SP1</SelectItem>
-                <SelectItem value="SP2">⚫ São Paulo SP2</SelectItem>
-                <SelectItem value="SOR">🟢 Sorocaba SOR</SelectItem>
+                <SelectItem value="all">🌐 Todas as Lojas</SelectItem>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            
+
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -199,14 +163,14 @@ export default function Vehicles() {
                   Novo Veículo
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingVehicle ? "Editar Veículo" : "Novo Veículo"}
                   </DialogTitle>
                 </DialogHeader>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -219,7 +183,7 @@ export default function Vehicles() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="model">Modelo</Label>
                       <Input
@@ -231,7 +195,7 @@ export default function Vehicles() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="year">Ano</Label>
@@ -245,7 +209,7 @@ export default function Vehicles() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="color">Cor</Label>
                       <Input
@@ -255,19 +219,19 @@ export default function Vehicles() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="mileage">Quilometragem</Label>
                       <Input
                         id="mileage"
                         type="number"
-                        value={formData.mileage}
+                        value={formData.mileage || 0}
                         onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })}
                         min="0"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="clientId">Cliente</Label>
@@ -276,40 +240,40 @@ export default function Vehicles() {
                           <SelectValue placeholder="Selecione um cliente" />
                         </SelectTrigger>
                         <SelectContent>
-                          {clients.map((client: Client) => (
+                          {clients.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
-                              {client.name} ({client.unit})
+                              {client.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <Label htmlFor="unit">Unidade</Label>
-                      <Select value={formData.unit} onValueChange={(value: any) => setFormData({ ...formData, unit: value })}>
+                      <Label htmlFor="storeId">Loja</Label>
+                      <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="SP1">São Paulo SP1</SelectItem>
-                          <SelectItem value="SP2">São Paulo SP2</SelectItem>
-                          <SelectItem value="SOR">Sorocaba SOR</SelectItem>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="chassis">Chassi (Opcional)</Label>
                     <Input
                       id="chassis"
-                      value={formData.chassis}
+                      value={formData.chassis || ""}
                       onChange={(e) => setFormData({ ...formData, chassis: e.target.value })}
                       placeholder="9BG123456789"
                     />
                   </div>
-                  
+
                   <div className="flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                       Cancelar
@@ -323,7 +287,7 @@ export default function Vehicles() {
             </Dialog>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Lista de Veículos</CardTitle>
@@ -337,8 +301,8 @@ export default function Vehicles() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {vehicles.map((vehicle: Vehicle & { client: Client }) => (
-                  <Card key={vehicle.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getUnitColor(vehicle.unit) }}>
+                {vehicles.map((vehicle) => (
+                  <Card key={vehicle.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getStoreColor(vehicle.storeId) }}>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -347,11 +311,11 @@ export default function Vehicles() {
                             <h3 className="text-lg font-semibold text-foreground">
                               {vehicle.model} - {vehicle.plate}
                             </h3>
-                            <Badge variant="outline" style={{ backgroundColor: getUnitColor(vehicle.unit), color: 'white' }}>
-                              {getUnitName(vehicle.unit)}
+                            <Badge variant="outline" style={{ backgroundColor: getStoreColor(vehicle.storeId), color: 'white' }}>
+                              {getStoreName(vehicle.storeId)}
                             </Badge>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">Cliente:</span>
@@ -371,14 +335,14 @@ export default function Vehicles() {
                               {vehicle.mileage?.toLocaleString() || "N/A"}
                             </div>
                           </div>
-                          
+
                           {vehicle.chassis && (
                             <div className="mt-2 text-sm text-muted-foreground">
                               <span className="font-medium">Chassi:</span> {vehicle.chassis}
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(vehicle)}>
                             <Edit className="h-4 w-4" />

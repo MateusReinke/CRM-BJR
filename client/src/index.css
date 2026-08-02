@@ -144,8 +144,29 @@
   .bg-unit-global {
     background-color: var(--global-color);
   }
-  
+
   .border-unit-global {
     border-color: var(--global-color);
+  }
+}
+
+/* Scopes printing (nota fiscal view) to just the marked element, hiding the
+   rest of the app chrome (sidebar, header, dialog overlay, etc). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .invoice-print-area,
+  .invoice-print-area * {
+    visibility: visible;
+  }
+  .invoice-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
   }
 }

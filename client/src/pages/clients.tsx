@@ -12,11 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Phone, Mail, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useUnit } from "@/contexts/unit-context";
+import { useStore } from "@/contexts/store-context";
 import type { Client, InsertClient } from "@shared/schema";
 
 export default function Clients() {
-  const { selectedUnit } = useUnit();
+  const { stores, selectedStoreId, setSelectedStoreId, getStoreName, getStoreColor } = useStore();
   const [open, setOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState<InsertClient>({
@@ -25,7 +25,7 @@ export default function Clients() {
     phone: "",
     email: "",
     address: "",
-    unit: "SP1",
+    storeId: "",
     observations: "",
   });
 
@@ -33,16 +33,7 @@ export default function Clients() {
   const queryClient = useQueryClient();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients", selectedUnit],
-    queryFn: async () => {
-      const res = await fetch(`/api/clients?unit=${selectedUnit}`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      return res.json();
-    }
+    queryKey: ["/api/clients", { storeId: selectedStoreId }],
   });
 
   const createClientMutation = useMutation({
@@ -56,8 +47,8 @@ export default function Clients() {
       resetForm();
       toast({ title: "Cliente criado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao criar cliente", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao criar cliente", description: error.message, variant: "destructive" });
     },
   });
 
@@ -72,8 +63,8 @@ export default function Clients() {
       resetForm();
       toast({ title: "Cliente atualizado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao atualizar cliente", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar cliente", description: error.message, variant: "destructive" });
     },
   });
 
@@ -85,8 +76,8 @@ export default function Clients() {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({ title: "Cliente excluído com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao excluir cliente", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao excluir cliente", description: error.message, variant: "destructive" });
     },
   });
 
@@ -97,7 +88,7 @@ export default function Clients() {
       phone: "",
       email: "",
       address: "",
-      unit: "SP1",
+      storeId: selectedStoreId !== 'all' ? selectedStoreId : (stores[0]?.id || ""),
       observations: "",
     });
     setEditingClient(null);
@@ -120,7 +111,7 @@ export default function Clients() {
       phone: client.phone,
       email: client.email || "",
       address: client.address || "",
-      unit: client.unit,
+      storeId: client.storeId,
       observations: client.observations || "",
     });
     setOpen(true);
@@ -132,46 +123,28 @@ export default function Clients() {
     }
   };
 
-  const getUnitColor = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return 'bg-unit-sp1';
-      case 'SP2': return 'bg-unit-sp2';
-      case 'SOR': return 'bg-unit-sor';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getUnitName = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return 'São Paulo SP1';
-      case 'SP2': return 'São Paulo SP2';
-      case 'SOR': return 'Sorocaba SOR';
-      default: return unit;
-    }
-  };
-
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-            <p className="text-muted-foreground">Gerencie os clientes da sua unidade</p>
+            <p className="text-muted-foreground">Gerencie os clientes da sua loja</p>
           </div>
-          
+
           <div className="flex gap-4 items-center">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">🌐 Todas as Unidades</SelectItem>
-                <SelectItem value="SP1">🔵 São Paulo SP1</SelectItem>
-                <SelectItem value="SP2">⚫ São Paulo SP2</SelectItem>
-                <SelectItem value="SOR">🟢 Sorocaba SOR</SelectItem>
+                <SelectItem value="all">🌐 Todas as Lojas</SelectItem>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            
+
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -179,14 +152,14 @@ export default function Clients() {
                   Novo Cliente
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingClient ? "Editar Cliente" : "Novo Cliente"}
                   </DialogTitle>
                 </DialogHeader>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -198,7 +171,7 @@ export default function Clients() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
                       <Input
@@ -209,7 +182,7 @@ export default function Clients() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Telefone (WhatsApp)</Label>
@@ -220,53 +193,53 @@ export default function Clients() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email">E-mail</Label>
                       <Input
                         id="email"
                         type="email"
-                        value={formData.email}
+                        value={formData.email || ""}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="unit">Unidade</Label>
-                      <Select value={formData.unit} onValueChange={(value: any) => setFormData({ ...formData, unit: value })}>
+                      <Label htmlFor="storeId">Loja</Label>
+                      <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione a loja" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="SP1">São Paulo SP1</SelectItem>
-                          <SelectItem value="SP2">São Paulo SP2</SelectItem>
-                          <SelectItem value="SOR">Sorocaba SOR</SelectItem>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="address">Endereço</Label>
                       <Input
                         id="address"
-                        value={formData.address}
+                        value={formData.address || ""}
                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="observations">Observações</Label>
                     <Textarea
                       id="observations"
-                      value={formData.observations}
+                      value={formData.observations || ""}
                       onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
                       rows={3}
                     />
                   </div>
-                  
+
                   <div className="flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                       Cancelar
@@ -280,7 +253,7 @@ export default function Clients() {
             </Dialog>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Lista de Clientes</CardTitle>
@@ -294,8 +267,8 @@ export default function Clients() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {clients.map((client: Client) => (
-                  <Card key={client.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: `var(--${client.unit.toLowerCase() === 'sp1' ? 'sp1' : client.unit.toLowerCase() === 'sp2' ? 'sp2' : 'sor'}-color)` }}>
+                {clients.map((client) => (
+                  <Card key={client.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getStoreColor(client.storeId) }}>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -304,11 +277,11 @@ export default function Clients() {
                             <h3 className="text-lg font-semibold text-foreground">
                               {client.name}
                             </h3>
-                            <Badge variant="outline" className={getUnitColor(client.unit)}>
-                              {getUnitName(client.unit)}
+                            <Badge variant="outline" style={{ backgroundColor: getStoreColor(client.storeId), color: 'white' }}>
+                              {getStoreName(client.storeId)}
                             </Badge>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">CPF/CNPJ:</span>
@@ -323,20 +296,20 @@ export default function Clients() {
                               {client.email || "N/A"}
                             </div>
                           </div>
-                          
+
                           {client.address && (
                             <div className="mt-2 text-sm text-muted-foreground">
                               <span className="font-medium">Endereço:</span> {client.address}
                             </div>
                           )}
-                          
+
                           {client.observations && (
                             <div className="mt-2 text-sm text-muted-foreground">
                               <span className="font-medium">Observações:</span> {client.observations}
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(client)}>
                             <Edit className="h-4 w-4" />

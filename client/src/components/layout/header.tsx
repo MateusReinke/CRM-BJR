@@ -3,25 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/components/ui/theme-provider";
+import { useStore } from "@/contexts/store-context";
 
 interface HeaderProps {
-  selectedUnit: string;
+  selectedStoreId: string;
   setMobileMenuOpen: (open: boolean) => void;
 }
 
-export default function Header({ selectedUnit, setMobileMenuOpen }: HeaderProps) {
+export default function Header({ selectedStoreId, setMobileMenuOpen }: HeaderProps) {
   const { user, logoutMutation } = useAuth();
   const { theme, setTheme } = useTheme();
-
-  const getUnitName = (unit: string) => {
-    const unitNames = {
-      'all': 'Todas as Unidades',
-      'SP1': 'São Paulo SP1',
-      'SP2': 'São Paulo SP2',
-      'SOR': 'Sorocaba SOR'
-    };
-    return unitNames[unit as keyof typeof unitNames] || 'Todas as Unidades';
-  };
+  const { getStoreName } = useStore();
 
   const getUserInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -40,7 +32,7 @@ export default function Header({ selectedUnit, setMobileMenuOpen }: HeaderProps)
       </Button>
 
       <div className="flex-1 px-4 flex justify-between items-center">
-        <div className="flex-1 flex">
+        <div className="flex-1 flex items-center gap-4">
           <div className="w-full flex md:ml-0">
             <div className="relative w-full max-w-lg">
               <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
@@ -53,8 +45,11 @@ export default function Header({ selectedUnit, setMobileMenuOpen }: HeaderProps)
               />
             </div>
           </div>
+          <span className="hidden lg:inline text-sm text-muted-foreground whitespace-nowrap" data-testid="text-header-store">
+            {getStoreName(selectedStoreId)}
+          </span>
         </div>
-        
+
         <div className="ml-4 flex items-center md:ml-6 space-x-4">
           {/* Theme Toggle */}
           <Button
@@ -70,9 +65,6 @@ export default function Header({ selectedUnit, setMobileMenuOpen }: HeaderProps)
           {/* Notifications */}
           <Button variant="outline" size="icon" className="relative">
             <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              3
-            </span>
           </Button>
 
           {/* User Profile */}
@@ -90,8 +82,8 @@ export default function Header({ selectedUnit, setMobileMenuOpen }: HeaderProps)
                 {user?.role || 'Role'}
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
