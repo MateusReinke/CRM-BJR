@@ -436,6 +436,7 @@ export default function Invoices() {
       {/* Print / detail view */}
       <Dialog open={!!viewingInvoice} onOpenChange={(v) => !v && setViewingInvoice(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Detalhes da Nota Fiscal</DialogTitle>
           {viewingInvoice && (
             <div className="invoice-print-area space-y-4 p-2">
               {viewingInvoice.provider === 'simulado' && (
