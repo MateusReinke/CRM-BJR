@@ -12,30 +12,32 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Package, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useStore } from "@/contexts/store-context";
 import type { Inventory, InsertInventory } from "@shared/schema";
 
 export default function InventoryPage() {
+  const { stores, selectedStoreId, setSelectedStoreId, getStoreName, getStoreColor } = useStore();
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Inventory | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [formData, setFormData] = useState<InsertInventory>({
     code: "",
     name: "",
     description: "",
     category: "",
-    unit: "SP1",
+    storeId: "",
     currentQuantity: 0,
     minimumQuantity: 0,
     costPrice: "0.00",
     salePrice: "0.00",
+    ncm: "",
     supplier: "",
   });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: inventory = [], isLoading } = useQuery({
-    queryKey: ["/api/inventory/all"],
+  const { data: inventory = [], isLoading } = useQuery<Inventory[]>({
+    queryKey: ["/api/inventory", { storeId: selectedStoreId }],
   });
 
   const createItemMutation = useMutation({
@@ -45,12 +47,13 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       setOpen(false);
       resetForm();
       toast({ title: "Item criado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao criar item", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao criar item", description: error.message, variant: "destructive" });
     },
   });
 
@@ -61,12 +64,13 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       setOpen(false);
       resetForm();
       toast({ title: "Item atualizado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao atualizar item", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar item", description: error.message, variant: "destructive" });
     },
   });
 
@@ -76,10 +80,11 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       toast({ title: "Item excluído com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao excluir item", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao excluir item", description: error.message, variant: "destructive" });
     },
   });
 
@@ -89,11 +94,12 @@ export default function InventoryPage() {
       name: "",
       description: "",
       category: "",
-      unit: "SP1",
+      storeId: selectedStoreId !== 'all' ? selectedStoreId : (stores[0]?.id || ""),
       currentQuantity: 0,
       minimumQuantity: 0,
       costPrice: "0.00",
       salePrice: "0.00",
+      ncm: "",
       supplier: "",
     });
     setEditingItem(null);
@@ -115,11 +121,12 @@ export default function InventoryPage() {
       name: item.name,
       description: item.description || "",
       category: item.category,
-      unit: item.unit,
+      storeId: item.storeId,
       currentQuantity: item.currentQuantity,
       minimumQuantity: item.minimumQuantity,
       costPrice: item.costPrice.toString(),
       salePrice: item.salePrice.toString(),
+      ncm: item.ncm || "",
       supplier: item.supplier || "",
     });
     setOpen(true);
@@ -128,24 +135,6 @@ export default function InventoryPage() {
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir este item?")) {
       deleteItemMutation.mutate(id);
-    }
-  };
-
-  const getUnitColor = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return '#2563eb';
-      case 'SP2': return '#000000';
-      case 'SOR': return '#16a34a';
-      default: return '#6b7280';
-    }
-  };
-
-  const getUnitName = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return 'São Paulo SP1';
-      case 'SP2': return 'São Paulo SP2';
-      case 'SOR': return 'Sorocaba SOR';
-      default: return unit;
     }
   };
 
@@ -163,20 +152,20 @@ export default function InventoryPage() {
             <h1 className="text-2xl font-bold text-foreground">Estoque</h1>
             <p className="text-muted-foreground">Gerencie o estoque de peças e produtos</p>
           </div>
-          
+
           <div className="flex gap-4 items-center">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">🌐 Todas as Unidades</SelectItem>
-                <SelectItem value="SP1">🔵 São Paulo SP1</SelectItem>
-                <SelectItem value="SP2">⚫ São Paulo SP2</SelectItem>
-                <SelectItem value="SOR">🟢 Sorocaba SOR</SelectItem>
+                <SelectItem value="all">🌐 Todas as Lojas</SelectItem>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            
+
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -184,14 +173,14 @@ export default function InventoryPage() {
                   Novo Item
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingItem ? "Editar Item" : "Novo Item"}
                   </DialogTitle>
                 </DialogHeader>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -204,7 +193,7 @@ export default function InventoryPage() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome</Label>
                       <Input
@@ -216,7 +205,7 @@ export default function InventoryPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="category">Categoria</Label>
@@ -228,22 +217,22 @@ export default function InventoryPage() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <Label htmlFor="unit">Unidade</Label>
-                      <Select value={formData.unit} onValueChange={(value: any) => setFormData({ ...formData, unit: value })}>
+                      <Label htmlFor="storeId">Loja</Label>
+                      <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="SP1">São Paulo SP1</SelectItem>
-                          <SelectItem value="SP2">São Paulo SP2</SelectItem>
-                          <SelectItem value="SOR">Sorocaba SOR</SelectItem>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="currentQuantity">Quantidade Atual</Label>
@@ -256,7 +245,7 @@ export default function InventoryPage() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="minimumQuantity">Quantidade Mínima</Label>
                       <Input
@@ -269,7 +258,7 @@ export default function InventoryPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="costPrice">Preço Custo (R$)</Label>
@@ -282,7 +271,7 @@ export default function InventoryPage() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="salePrice">Preço Venda (R$)</Label>
                       <Input
@@ -295,28 +284,40 @@ export default function InventoryPage() {
                       />
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="supplier">Fornecedor</Label>
-                    <Input
-                      id="supplier"
-                      value={formData.supplier}
-                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                      placeholder="Shell do Brasil"
-                    />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier">Fornecedor</Label>
+                      <Input
+                        id="supplier"
+                        value={formData.supplier || ""}
+                        onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                        placeholder="Shell do Brasil"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ncm">NCM (para Nota Fiscal)</Label>
+                      <Input
+                        id="ncm"
+                        value={formData.ncm || ""}
+                        onChange={(e) => setFormData({ ...formData, ncm: e.target.value })}
+                        placeholder="2710.19.32"
+                      />
+                    </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="description">Descrição</Label>
                     <Textarea
                       id="description"
-                      value={formData.description}
+                      value={formData.description || ""}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
                       placeholder="Óleo sintético para motores"
                     />
                   </div>
-                  
+
                   <div className="flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                       Cancelar
@@ -330,7 +331,7 @@ export default function InventoryPage() {
             </Dialog>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Itens em Estoque</CardTitle>
@@ -344,12 +345,12 @@ export default function InventoryPage() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {inventory.map((item: Inventory) => {
+                {inventory.map((item) => {
                   const stockStatus = getStockStatus(item.currentQuantity, item.minimumQuantity);
                   const StatusIcon = stockStatus.icon;
-                  
+
                   return (
-                    <Card key={item.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getUnitColor(item.unit) }}>
+                    <Card key={item.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getStoreColor(item.storeId) }}>
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -358,8 +359,8 @@ export default function InventoryPage() {
                               <h3 className="text-lg font-semibold text-foreground">
                                 {item.name} ({item.code})
                               </h3>
-                              <Badge variant="outline" style={{ backgroundColor: getUnitColor(item.unit), color: 'white' }}>
-                                {getUnitName(item.unit)}
+                              <Badge variant="outline" style={{ backgroundColor: getStoreColor(item.storeId), color: 'white' }}>
+                                {getStoreName(item.storeId)}
                               </Badge>
                               <div className={`flex items-center gap-1 ${stockStatus.color}`}>
                                 <StatusIcon className="h-4 w-4" />
@@ -368,7 +369,7 @@ export default function InventoryPage() {
                                 </span>
                               </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">Categoria:</span>
@@ -387,20 +388,20 @@ export default function InventoryPage() {
                                 R$ {parseFloat(item.salePrice).toFixed(2)}
                               </div>
                             </div>
-                            
+
                             {item.description && (
                               <div className="mt-2 text-sm text-muted-foreground">
                                 <span className="font-medium">Descrição:</span> {item.description}
                               </div>
                             )}
-                            
+
                             {item.supplier && (
                               <div className="mt-1 text-sm text-muted-foreground">
                                 <span className="font-medium">Fornecedor:</span> {item.supplier}
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="flex gap-2">
                             <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
                               <Edit className="h-4 w-4" />

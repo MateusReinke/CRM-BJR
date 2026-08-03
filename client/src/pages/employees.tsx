@@ -13,12 +13,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { Plus, Edit, Trash2, User, Mail, Shield, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { canManageEmployees, getRoleName } from "@/lib/permissions";
+import { useStore } from "@/contexts/store-context";
 import type { User as UserType, InsertUser } from "@shared/schema";
 
 export default function Employees() {
+  const { stores, selectedStoreId, setSelectedStoreId, getStoreName, getStoreColor } = useStore();
   const [open, setOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<UserType | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [formData, setFormData] = useState<InsertUser>({
     username: "",
@@ -26,7 +27,7 @@ export default function Employees() {
     name: "",
     email: "",
     role: "mechanic",
-    unit: "SP1",
+    storeId: "",
     isActive: true,
   });
 
@@ -51,8 +52,8 @@ export default function Employees() {
     );
   }
 
-  const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["/api/employees", selectedUnit, selectedRole],
+  const { data: employees = [], isLoading } = useQuery<UserType[]>({
+    queryKey: ["/api/employees", { storeId: selectedStoreId, role: selectedRole }],
   });
 
   const createEmployeeMutation = useMutation({
@@ -66,8 +67,8 @@ export default function Employees() {
       resetForm();
       toast({ title: "Funcionário criado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao criar funcionário", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao criar funcionário", description: error.message, variant: "destructive" });
     },
   });
 
@@ -82,8 +83,8 @@ export default function Employees() {
       resetForm();
       toast({ title: "Funcionário atualizado com sucesso!" });
     },
-    onError: () => {
-      toast({ title: "Erro ao atualizar funcionário", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar funcionário", description: error.message, variant: "destructive" });
     },
   });
 
@@ -94,12 +95,12 @@ export default function Employees() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
-      toast({ 
+      toast({
         title: "Status do funcionário atualizado com sucesso!",
       });
     },
-    onError: () => {
-      toast({ title: "Erro ao atualizar status", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar status", description: error.message, variant: "destructive" });
     },
   });
 
@@ -110,7 +111,7 @@ export default function Employees() {
       name: "",
       email: "",
       role: "mechanic",
-      unit: "SP1",
+      storeId: selectedStoreId !== 'all' ? selectedStoreId : (stores[0]?.id || ""),
       isActive: true,
     });
     setEditingEmployee(null);
@@ -120,9 +121,9 @@ export default function Employees() {
     e.preventDefault();
     if (editingEmployee) {
       // Don't send password if not changed
-      const updateData = { ...formData };
+      const updateData: Partial<InsertUser> = { ...formData };
       if (!updateData.password || updateData.password === "") {
-        delete (updateData as any).password;
+        delete updateData.password;
       }
       updateEmployeeMutation.mutate({ id: editingEmployee.id, data: updateData });
     } else {
@@ -138,7 +139,7 @@ export default function Employees() {
       name: employee.name,
       email: employee.email,
       role: employee.role,
-      unit: employee.unit,
+      storeId: employee.storeId,
       isActive: employee.isActive,
     });
     setOpen(true);
@@ -148,24 +149,6 @@ export default function Employees() {
     const action = employee.isActive ? "desativar" : "ativar";
     if (confirm(`Tem certeza que deseja ${action} este funcionário?`)) {
       toggleEmployeeStatusMutation.mutate({ id: employee.id, isActive: !employee.isActive });
-    }
-  };
-
-  const getUnitColor = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return '#2563eb';
-      case 'SP2': return '#000000';
-      case 'SOR': return '#16a34a';
-      default: return '#6b7280';
-    }
-  };
-
-  const getUnitName = (unit: string) => {
-    switch (unit) {
-      case 'SP1': return 'São Paulo SP1';
-      case 'SP2': return 'São Paulo SP2';
-      case 'SOR': return 'Sorocaba SOR';
-      default: return unit;
     }
   };
 
@@ -188,17 +171,17 @@ export default function Employees() {
             <h1 className="text-2xl font-bold text-foreground">Funcionários</h1>
             <p className="text-muted-foreground">Gerencie os funcionários da empresa</p>
           </div>
-          
+
           <div className="flex gap-4 items-center">
-            <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">🌐 Todas as Unidades</SelectItem>
-                <SelectItem value="SP1">🔵 São Paulo SP1</SelectItem>
-                <SelectItem value="SP2">⚫ São Paulo SP2</SelectItem>
-                <SelectItem value="SOR">🟢 Sorocaba SOR</SelectItem>
+                <SelectItem value="all">🌐 Todas as Lojas</SelectItem>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -215,7 +198,7 @@ export default function Employees() {
                 <SelectItem value="mechanic">🟢 Mecânico</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -223,14 +206,14 @@ export default function Employees() {
                   Novo Funcionário
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingEmployee ? "Editar Funcionário" : "Novo Funcionário"}
                   </DialogTitle>
                 </DialogHeader>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -243,7 +226,7 @@ export default function Employees() {
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email">E-mail</Label>
                       <Input
@@ -256,7 +239,7 @@ export default function Employees() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="username">Nome de Usuário</Label>
@@ -269,7 +252,7 @@ export default function Employees() {
                         disabled={!!editingEmployee}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="password">
                         {editingEmployee ? "Nova Senha (deixe vazio para manter)" : "Senha"}
@@ -285,7 +268,7 @@ export default function Employees() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="role">Cargo</Label>
@@ -302,22 +285,22 @@ export default function Employees() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <Label htmlFor="unit">Unidade</Label>
-                      <Select value={formData.unit} onValueChange={(value: any) => setFormData({ ...formData, unit: value })}>
+                      <Label htmlFor="storeId">Loja</Label>
+                      <Select value={formData.storeId} onValueChange={(value) => setFormData({ ...formData, storeId: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="SP1">São Paulo SP1</SelectItem>
-                          <SelectItem value="SP2">São Paulo SP2</SelectItem>
-                          <SelectItem value="SOR">Sorocaba SOR</SelectItem>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>{store.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                       Cancelar
@@ -331,7 +314,7 @@ export default function Employees() {
             </Dialog>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Lista de Funcionários</CardTitle>
@@ -345,8 +328,8 @@ export default function Employees() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {employees.map((employee: UserType) => (
-                  <Card key={employee.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getUnitColor(employee.unit) }}>
+                {employees.map((employee) => (
+                  <Card key={employee.id} className="relative overflow-hidden border-l-4" style={{ borderLeftColor: getStoreColor(employee.storeId) }}>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -355,8 +338,8 @@ export default function Employees() {
                             <h3 className="text-lg font-semibold text-foreground">
                               {employee.name}
                             </h3>
-                            <Badge variant="outline" style={{ backgroundColor: getUnitColor(employee.unit), color: 'white' }}>
-                              {getUnitName(employee.unit)}
+                            <Badge variant="outline" style={{ backgroundColor: getStoreColor(employee.storeId), color: 'white' }}>
+                              {getStoreName(employee.storeId)}
                             </Badge>
                             <Badge className={getRoleColor(employee.role)}>
                               {getRoleName(employee.role)}
@@ -367,7 +350,7 @@ export default function Employees() {
                               </Badge>
                             )}
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4" />
@@ -386,14 +369,14 @@ export default function Employees() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleToggleStatus(employee)}
                             className={employee.isActive ? "text-red-600 hover:text-red-700" : "text-green-600 hover:text-green-700"}
                           >

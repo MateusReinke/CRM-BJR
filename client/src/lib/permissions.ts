@@ -1,6 +1,6 @@
 import type { User } from "@shared/schema";
 
-export type Permission = 
+export type Permission =
   | 'view_dashboard'
   | 'manage_clients'
   | 'manage_vehicles'
@@ -9,6 +9,8 @@ export type Permission =
   | 'manage_appointments'
   | 'manage_financial'
   | 'manage_employees'
+  | 'manage_stores'
+  | 'manage_invoices'
   | 'view_reports'
   | 'system_admin';
 
@@ -16,12 +18,14 @@ export const rolePermissions: Record<string, Permission[]> = {
   admin: [
     'view_dashboard',
     'manage_clients',
-    'manage_vehicles', 
+    'manage_vehicles',
     'manage_service_orders',
     'manage_inventory',
     'manage_appointments',
     'manage_financial',
     'manage_employees',
+    'manage_stores',
+    'manage_invoices',
     'view_reports',
     'system_admin'
   ],
@@ -29,10 +33,11 @@ export const rolePermissions: Record<string, Permission[]> = {
     'view_dashboard',
     'manage_clients',
     'manage_vehicles',
-    'manage_service_orders', 
+    'manage_service_orders',
     'manage_inventory',
     'manage_appointments',
     'manage_financial',
+    'manage_invoices',
     'view_reports'
   ],
   hr: [
@@ -45,7 +50,8 @@ export const rolePermissions: Record<string, Permission[]> = {
     'manage_clients',
     'manage_vehicles',
     'manage_service_orders',
-    'manage_inventory'
+    'manage_inventory',
+    'manage_invoices'
   ],
   mechanic: [
     'view_dashboard',
@@ -80,6 +86,14 @@ export function canViewReports(user: User | null): boolean {
 
 export function canManageFinancial(user: User | null): boolean {
   return hasPermission(user, 'manage_financial');
+}
+
+export function canManageStores(user: User | null): boolean {
+  return hasPermission(user, 'manage_stores');
+}
+
+export function canManageInvoices(user: User | null): boolean {
+  return hasPermission(user, 'manage_invoices');
 }
 
 export function isAdmin(user: User | null): boolean {

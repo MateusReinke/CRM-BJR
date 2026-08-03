@@ -2,28 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { useStore } from "@/contexts/store-context";
+import type { Inventory } from "@shared/schema";
 
 interface StockAlertsProps {
-  selectedUnit: string;
+  selectedStoreId: string;
 }
 
-export default function StockAlerts({ selectedUnit }: StockAlertsProps) {
-  const { data: alerts = { critical: [], low: [] }, isLoading } = useQuery({
-    queryKey: ["/api/inventory/alerts", selectedUnit],
-  });
+interface StockAlertsResponse {
+  critical: Inventory[];
+  low: Inventory[];
+}
 
-  const getUnitName = (unit: string) => {
-    switch (unit) {
-      case 'SP1':
-        return 'São Paulo SP1';
-      case 'SP2':
-        return 'São Paulo SP2';
-      case 'SOR':
-        return 'Sorocaba SOR';
-      default:
-        return unit;
-    }
-  };
+export default function StockAlerts({ selectedStoreId }: StockAlertsProps) {
+  const { getStoreName } = useStore();
+  const { data: alerts = { critical: [], low: [] }, isLoading } = useQuery<StockAlertsResponse>({
+    queryKey: ["/api/inventory/alerts", { storeId: selectedStoreId }],
+  });
 
   if (isLoading) {
     return (
@@ -39,8 +34,8 @@ export default function StockAlerts({ selectedUnit }: StockAlertsProps) {
   }
 
   const allAlerts = [
-    ...alerts.critical.map((item: any) => ({ ...item, type: 'critical' })),
-    ...alerts.low.map((item: any) => ({ ...item, type: 'low' })),
+    ...alerts.critical.map((item) => ({ ...item, alertType: 'critical' as const })),
+    ...alerts.low.map((item) => ({ ...item, alertType: 'low' as const })),
   ].slice(0, 5);
 
   return (
@@ -54,21 +49,21 @@ export default function StockAlerts({ selectedUnit }: StockAlertsProps) {
             Nenhum alerta de estoque
           </div>
         ) : (
-          allAlerts.map((alert: any) => (
+          allAlerts.map((alert) => (
             <div key={alert.id} className="flex items-start space-x-3">
-              <div 
+              <div
                 className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
-                  alert.type === 'critical' ? 'bg-red-500' : 'bg-yellow-500'
-                }`} 
+                  alert.alertType === 'critical' ? 'bg-red-500' : 'bg-yellow-500'
+                }`}
               />
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">
                   {alert.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <span 
+                  <span
                     className={`font-medium ${
-                      alert.type === 'critical' ? 'text-red-600' : 'text-yellow-600'
+                      alert.alertType === 'critical' ? 'text-red-600' : 'text-yellow-600'
                     }`}
                   >
                     {alert.currentQuantity}
@@ -76,16 +71,16 @@ export default function StockAlerts({ selectedUnit }: StockAlertsProps) {
                   unidades restantes
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {getUnitName(alert.unit)}
+                  {getStoreName(alert.storeId)}
                 </p>
               </div>
             </div>
           ))
         )}
-        
+
         <div className="mt-6">
-          <Link 
-            href="/inventory" 
+          <Link
+            href="/inventory"
             className="text-primary hover:text-primary/80 text-sm font-medium inline-flex items-center"
           >
             Ver todos os alertas <ArrowRight className="ml-1 h-4 w-4" />
