@@ -87,9 +87,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Deployment (Docker / Coolify)
 
-The `Dockerfile` at the repo root builds and runs the app as a single container (`npm run build` then `node dist/index.js`, serving both the API and the built frontend on `$PORT`, default 5000). It deliberately keeps devDependencies in the final image (drizzle-kit, tsx) so `npm run db:push` / `npm run db:seed` can be run once against production via the platform's "execute a command in this container" feature - there's no separate migrations workflow yet.
+The `Dockerfile` at the repo root builds and runs the app as a single container (`npm run build` then `node dist/index.js`, serving both the API and the built frontend on `$PORT`, default 5000). It deliberately keeps devDependencies in the final image (drizzle-kit, tsx) so `npm run db:push` / `npm run db:seed` can be run once against production via the platform's "execute a command in this container" feature - there's no separate migrations workflow yet. `curl` is installed in the image because Coolify (and similar platforms) probe the container's health endpoint from inside it.
 
-Required environment variables are documented in `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`, `PORT`, `NODE_ENV=production`. `GET /api/health` checks both the process and the database connection, for the platform's health check.
+### Deploying on Coolify
+
+Use **Build Pack: Docker Compose** pointed at `docker-compose.yml`, not the raw Dockerfile option - Coolify parses that file's `environment:` block and pre-fills the app's Environment Variables screen with it, instead of showing an empty list. `PORT`, `NODE_ENV`, `SESSION_SECRET`, and `ENCRYPTION_KEY` already come with real, ready-to-use values; the only thing to edit before deploying is `DATABASE_URL` (`USUARIO`/`SENHA`/`HOST`/`NOME_DO_BANCO` placeholders) - copy it from your Coolify Postgres resource's own "internal" connection string rather than typing it by hand (the internal service hostname, not a LAN/host IP, and definitely not the resource's own generated password retyped from a screenshot - copy/paste it).
+
+Do not set a host port mapping (e.g. `5000:5000`) on the app - the compose file only `expose`s port 5000 internally, and Coolify's proxy routes the configured domain to it. A host-mapped port blocks zero-downtime redeploys because the next container can't bind it until the previous one fully stops.
+
+Once deployed, run `npm run db:push` and `npm run db:seed` once via Coolify's terminal for that container to set up the schema and starter data (three stores, expense categories, an `admin`/`admin123` login - change that password immediately).
+
+Required environment variables are also documented in `.env.example` for local/non-Compose use. `GET /api/health` checks both the process and the database connection, for the platform's health check.
 
 ## Migrating an existing deployment off the old unit enum
 

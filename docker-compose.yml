@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Internal port only - Coolify's proxy routes the configured domain to
+    # this. Do not add a host "ports" mapping here (e.g. "5000:5000"): that
+    # binds the port directly on the server and blocks zero-downtime
+    # redeploys (the next container can't bind the same port until the old
+    # one fully stops).
+    expose:
+      - "5000"
+    environment:
+      # Ready to deploy as-is - only DATABASE_URL needs your real database.
+      - PORT=5000
+      - NODE_ENV=production
+      - SESSION_SECRET=0993b28e4aebb61ede9df8778dc33828988e11ef25086b1454ca97b8162f5410
+      - ENCRYPTION_KEY=d92f16acb456c239667bd1476e4091ebb50462cc9fe5692516f03f7e82a41a44
+      # Replace USUARIO/SENHA/HOST/NOME_DO_BANCO with your Postgres resource's
+      # own internal connection details (copy them from that resource's page
+      # in Coolify - do not type the password by hand).
+      - DATABASE_URL=postgresql://USUARIO:SENHA@HOST:5432/NOME_DO_BANCO
