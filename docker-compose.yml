@@ -10,13 +10,14 @@ services:
     # Postgres service), which surfaces as "getaddrinfo ENOTFOUND".
     networks:
       - coolify
-    # Internal port only - Coolify's proxy routes the configured domain to
-    # this. Do not add a host "ports" mapping here (e.g. "5000:5000"): that
-    # binds the port directly on the server and blocks zero-downtime
-    # redeploys (the next container can't bind the same port until the old
-    # one fully stops).
-    expose:
-      - "5000"
+    # Bound directly on the host so the app is reachable as
+    # http://<server-ip>:5000, not just through Coolify's domain/proxy.
+    # Trade-off: redeploys have a few seconds of downtime instead of being
+    # zero-downtime, since the new container can't bind :5000 until the old
+    # one fully releases it. Fine for an internal tool redeployed
+    # occasionally; switch back to "expose: [\"5000\"]" if that ever matters.
+    ports:
+      - "5000:5000"
     environment:
       # Fixed on purpose (no ${VAR} interpolation) so Coolify has nothing to
       # show as editable for these, and they can't drift out of sync with
