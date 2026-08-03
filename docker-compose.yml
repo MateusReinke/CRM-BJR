@@ -11,16 +11,17 @@ services:
     # one fully stops).
     expose:
       - "5000"
-    # The ${VAR:-default} form is what makes Coolify show each of these as
-    # an editable field pre-filled with the given default on its Environment
-    # Variables screen - a plain "KEY=value" line is just a fixed value
-    # baked into the file, Coolify has nothing to surface for it.
     environment:
-      - PORT=${PORT:-5000}
-      - NODE_ENV=${NODE_ENV:-production}
-      - SESSION_SECRET=${SESSION_SECRET:-0993b28e4aebb61ede9df8778dc33828988e11ef25086b1454ca97b8162f5410}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-d92f16acb456c239667bd1476e4091ebb50462cc9fe5692516f03f7e82a41a44}
-      # Replace USUARIO/SENHA/HOST/NOME_DO_BANCO with your Postgres resource's
-      # own internal connection details (copy them from that resource's page
-      # in Coolify - do not type the password by hand).
+      # Fixed on purpose (no ${VAR} interpolation) so Coolify has nothing to
+      # show as editable for these, and they can't drift out of sync with
+      # the hardcoded "expose: 5000" above or with how the Dockerfile
+      # decides dev vs production mode.
+      - PORT=5000
+      - NODE_ENV=production
+      - SESSION_SECRET=0993b28e4aebb61ede9df8778dc33828988e11ef25086b1454ca97b8162f5410
+      - ENCRYPTION_KEY=d92f16acb456c239667bd1476e4091ebb50462cc9fe5692516f03f7e82a41a44
+      # The one field that's actually meant to be edited per deployment.
+      # Replace USUARIO/SENHA/HOST/NOME_DO_BANCO with your Postgres
+      # resource's own internal connection details (copy them from that
+      # resource's page in Coolify - do not type the password by hand).
       - DATABASE_URL=${DATABASE_URL:-postgresql://USUARIO:SENHA@HOST:5432/NOME_DO_BANCO}
