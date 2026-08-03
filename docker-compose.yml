@@ -4,6 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    # Join Coolify's own shared network instead of the isolated per-project
+    # network Compose creates by default - without this, the container can't
+    # resolve other Coolify-managed resources' internal hostnames (like the
+    # Postgres service), which surfaces as "getaddrinfo ENOTFOUND".
+    networks:
+      - coolify
     # Internal port only - Coolify's proxy routes the configured domain to
     # this. Do not add a host "ports" mapping here (e.g. "5000:5000"): that
     # binds the port directly on the server and blocks zero-downtime
@@ -25,3 +31,7 @@ services:
       # resource's own internal connection details (copy them from that
       # resource's page in Coolify - do not type the password by hand).
       - DATABASE_URL=${DATABASE_URL:-postgresql://USUARIO:SENHA@HOST:5432/NOME_DO_BANCO}
+
+networks:
+  coolify:
+    external: true
