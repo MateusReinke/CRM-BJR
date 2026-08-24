@@ -2,12 +2,26 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, createHash } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser, insertUserSchema } from "@shared/schema";
+import { User as SelectUser, insertUserSchema, forgotPasswordSchema, resetPasswordSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { handleError, successResponse } from "./utils/errorHandler";
+import { sendPasswordResetEmail } from "./utils/mailer";
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function hashResetToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+// The reset-token fields never need to leave the server - strip them before
+// a user row goes into an API response.
+function toPublicUser(user: SelectUser) {
+  const { resetPasswordTokenHash, resetPasswordTokenExpiresAt, ...publicUser } = user;
+  return publicUser;
+}
 
 // Public self-registration must never let the caller pick their own role or
 // activation state - both are stripped from the request and role is pinned
@@ -93,7 +107,7 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(successResponse(user));
+        res.status(201).json(successResponse(toPublicUser(user)));
       });
     } catch (error) {
       handleError(error, res);
@@ -101,7 +115,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(successResponse(req.user));
+    res.status(200).json(successResponse(toPublicUser(req.user!)));
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -113,6 +127,55 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(successResponse(req.user));
+    res.json(successResponse(toPublicUser(req.user)));
+  });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      const user = await storage.getUserByEmail(email);
+
+      // Only act if the e-mail matches an account, but always send back the
+      // same response either way - otherwise this endpoint could be used to
+      // find out which e-mails have an account here.
+      if (user) {
+        const rawToken = randomBytes(32).toString("hex");
+        await storage.setPasswordResetToken(
+          user.id,
+          hashResetToken(rawToken),
+          new Date(Date.now() + RESET_TOKEN_TTL_MS),
+        );
+
+        const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${rawToken}`;
+        await sendPasswordResetEmail(user.email, resetUrl);
+      }
+
+      res.status(200).json(
+        successResponse({
+          message: "Se este e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.",
+        }),
+      );
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, password } = resetPasswordSchema.parse(req.body);
+      const user = await storage.getUserByValidResetToken(hashResetToken(token));
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          error: "Link inválido ou expirado. Solicite uma nova redefinição de senha.",
+        });
+      }
+
+      await storage.resetPassword(user.id, await hashPassword(password));
+      res.status(200).json(successResponse({ message: "Senha redefinida com sucesso." }));
+    } catch (error) {
+      handleError(error, res);
+    }
   });
 }

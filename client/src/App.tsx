@@ -19,6 +19,7 @@ import Invoices from "@/pages/invoices";
 import Stores from "@/pages/stores";
 import Employees from "@/pages/employees";
 import Landing from "@/pages/landing";
+import ResetPassword from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <ProtectedRoute path="/stores" component={Stores} />
       <ProtectedRoute path="/employees" component={Employees} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>
   );

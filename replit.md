@@ -36,6 +36,7 @@ Preferred communication style: Simple, everyday language.
 - **Role System**: admin, manager, mechanic, seller, hr - permissions are enumerated in `client/src/lib/permissions.ts` and enforced server-side per route (`server/routes.ts`)
 - **Store scoping**: admins see/act across all stores; every other role is pinned server-side to their own `storeId` regardless of what the client requests
 - **Self-registration**: `POST /api/register` always assigns the lowest-privilege role (`mechanic`) and ignores any role/isActive the client sends - an admin promotes accounts afterwards from "Funcionários". A public, fiscal-data-free `GET /api/stores/public` endpoint lets the registration form offer a store picker without requiring auth.
+- **Password reset**: "Esqueci minha senha" on the login page (`POST /api/forgot-password` → `POST /api/reset-password`) e-mails a single-use link valid for 1 hour; the token is stored hashed (`users.resetPasswordTokenHash`) and the response is identical whether or not the e-mail matches an account, so the endpoint can't be used to enumerate registered addresses. Sending goes through `server/utils/mailer.ts`: with `SMTP_HOST` unset it logs the reset link to the server console instead of failing, so the flow is still testable without a mail provider.
 
 ### Expenses & Revenue (Despesas)
 - `financial_transactions` are categorized (`financial_categories`, shared across the group) and, for expenses, linked to a `supplier`; for income, optionally linked to a `client`.

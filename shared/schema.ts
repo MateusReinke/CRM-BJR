@@ -70,6 +70,11 @@ export const users = pgTable("users", {
   storeId: varchar("store_id").notNull().references(() => stores.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  // "Esqueci minha senha": tokenHash stores a SHA-256 of the token e-mailed
+  // to the user, never the raw token, so a DB read alone can't be used to
+  // take over the account. Cleared on use or superseded by a fresh request.
+  resetPasswordTokenHash: text("reset_password_token_hash"),
+  resetPasswordTokenExpiresAt: timestamp("reset_password_token_expires_at"),
 });
 
 // Clients table
@@ -393,6 +398,17 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  resetPasswordTokenHash: true,
+  resetPasswordTokenExpiresAt: true,
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token obrigatório"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -472,6 +488,8 @@ export type Store = typeof stores.$inferSelect;
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;

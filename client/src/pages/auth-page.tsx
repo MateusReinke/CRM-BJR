@@ -8,7 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Wrench, Users, BarChart3 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Car, Wrench, Users, BarChart3, CheckCircle2 } from "lucide-react";
 
 interface PublicStore {
   id: string;
@@ -18,8 +25,11 @@ interface PublicStore {
 }
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, forgotPasswordMutation } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
   const [registerData, setRegisterData] = useState({
     username: "",
     password: "",
@@ -48,6 +58,26 @@ export default function AuthPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(loginData);
+  };
+
+  const handleForgotPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    forgotPasswordMutation.mutate(
+      { email: forgotEmail },
+      { onSuccess: () => setForgotSent(true) }
+    );
+  };
+
+  const closeForgotDialog = (open: boolean) => {
+    setForgotOpen(open);
+    if (!open) {
+      // Reset once the close animation has a moment to play, so the form
+      // doesn't visibly flash back to its initial state before it's hidden.
+      setTimeout(() => {
+        setForgotEmail("");
+        setForgotSent(false);
+      }, 200);
+    }
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -97,7 +127,16 @@ export default function AuthPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Senha</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Senha</Label>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                          onClick={() => setForgotOpen(true)}
+                        >
+                          Esqueci minha senha
+                        </button>
+                      </div>
                       <Input
                         id="password"
                         type="password"
@@ -106,9 +145,9 @@ export default function AuthPage() {
                         required
                       />
                     </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
+                    <Button
+                      type="submit"
+                      className="w-full"
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? "Entrando..." : "Entrar"}
@@ -243,6 +282,54 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={closeForgotDialog}>
+        <DialogContent className="sm:max-w-md">
+          {forgotSent ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Verifique seu e-mail
+                </DialogTitle>
+                <DialogDescription>
+                  Se <span className="font-medium text-foreground">{forgotEmail}</span> estiver
+                  cadastrado, enviamos um link para redefinir a senha. O link expira em 1 hora.
+                </DialogDescription>
+              </DialogHeader>
+              <Button className="w-full" onClick={() => closeForgotDialog(false)}>
+                Entendi
+              </Button>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Esqueci minha senha</DialogTitle>
+                <DialogDescription>
+                  Digite o e-mail cadastrado na sua conta. Enviaremos um link para você escolher
+                  uma nova senha.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="forgot-email">E-mail</Label>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={forgotPasswordMutation.isPending}>
+                  {forgotPasswordMutation.isPending ? "Enviando..." : "Enviar link de redefinição"}
+                </Button>
+              </form>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

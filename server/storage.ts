@@ -36,7 +36,7 @@ import {
   type CreateInvoiceInput,
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, asc, count, sum, lt, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, count, sum, lt, gt, sql, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { AppError } from "./utils/errorHandler";
@@ -65,7 +65,11 @@ export interface InvoiceWithRelations extends Invoice {
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+  getUserByValidResetToken(tokenHash: string): Promise<User | undefined>;
+  resetPassword(userId: string, hashedPassword: string): Promise<void>;
 
   // Stores (Lojas)
   getStores(includeInactive?: boolean): Promise<Store[]>;
@@ -168,12 +172,39 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async setPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({ resetPasswordTokenHash: tokenHash, resetPasswordTokenExpiresAt: expiresAt })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByValidResetToken(tokenHash: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.resetPasswordTokenHash, tokenHash), gt(users.resetPasswordTokenExpiresAt, new Date())));
+    return user || undefined;
+  }
+
+  async resetPassword(userId: string, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: hashedPassword, resetPasswordTokenHash: null, resetPasswordTokenExpiresAt: null })
+      .where(eq(users.id, userId));
   }
 
   // Stores (Lojas)
