@@ -89,6 +89,21 @@
   --global-color: hsl(356 75% 53%);
 }
 
+/* BJR marketing-page tokens (landing page only). Additive — the semantic
+   tokens above (--background, --card, --primary, --border, etc.) keep
+   driving the internal CRM app untouched. */
+:root {
+  --oleo: #141210;
+  --concreto: #e8e4dc;
+  --bjr: #c8102e;
+  --ambar: #f2a20c;
+  --aco: #8a8f98;
+  /* Aço darkened for body text on Concreto — same brand token, resolved to
+     a contrast-safe mix instead of a 6th named color: raw Aço on Concreto
+     is ~2.6:1 (fails AA); this mix lands ~5:1. */
+  --aco-claro: color-mix(in srgb, var(--aco) 55%, var(--oleo) 45%);
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -97,6 +112,39 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+  }
+
+  /* Scroll-reveal fallback: content is opacity:1 in plain CSS. Only the
+     .js-ready class on <html> (added on mount, unconditionally) turns on
+     the hidden-until-visible state; each element then flips to
+     .is-visible independently via its own useReveal() observer instance.
+     No JS at all, a thrown observer, or a single failed element can never
+     leave content stuck invisible — this is the fix for the bug class
+     described in the brief (SP2/SOR not appearing). */
+  .bjr-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  html.js-ready .bjr-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html.js-ready .bjr-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.js-ready .bjr-reveal {
+      transition: none;
+      transform: none;
+      opacity: 1;
+    }
   }
 }
 

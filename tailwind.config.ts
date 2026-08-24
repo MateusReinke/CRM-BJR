@@ -9,8 +9,19 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        sharp: "2px",
       },
       colors: {
+        // BJR marketing-page tokens (landing only) — additive, do not
+        // replace the semantic tokens above used by the internal CRM app.
+        oleo: "var(--oleo)",
+        concreto: "var(--concreto)",
+        bjr: "var(--bjr)",
+        ambar: "var(--ambar)",
+        aco: {
+          DEFAULT: "var(--aco)",
+          claro: "var(--aco-claro)",
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {
@@ -70,6 +81,27 @@ export default {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        // BJR marketing-page type roles
+        display: ["'Archivo'", "sans-serif"],
+        "display-expanded": ["'Archivo Expanded'", "'Archivo'", "sans-serif"],
+        body: ["'IBM Plex Sans'", "sans-serif"],
+        data: ["'IBM Plex Mono'", "monospace"],
+      },
+      fontSize: {
+        // BJR marketing-page type scale — named, additive to Tailwind's
+        // default scale (base 16px, irregular ratio on purpose).
+        legenda: ["0.75rem", { lineHeight: "1.4", letterSpacing: "0.04em" }],
+        nota: ["0.875rem", { lineHeight: "1.5" }],
+        corpo: ["1rem", { lineHeight: "1.6" }],
+        "corpo-lg": ["1.125rem", { lineHeight: "1.6" }],
+        rotulo: ["1.375rem", { lineHeight: "1.3" }],
+        subtitulo: ["1.75rem", { lineHeight: "1.25" }],
+        titulo: ["2.25rem", { lineHeight: "1.15" }],
+        "titulo-lg": ["3rem", { lineHeight: "1.05" }],
+        display: ["clamp(2.5rem, 1.5rem + 4.5vw, 5.5rem)", { lineHeight: "1" }],
+        dado: ["0.8125rem", { lineHeight: "1.4" }],
+        "dado-lg": ["1.125rem", { lineHeight: "1.3" }],
+        "dado-xl": ["2.5rem", { lineHeight: "1" }],
       },
       keyframes: {
         "accordion-down": {
