@@ -1,0 +1,122 @@
+/* BJR Centro Automotivo — landing page design system.
+   Scoped entirely under .bjr-landing so it never touches the CRM app's
+   shared theme tokens (--background, --primary, etc. in index.css). */
+
+.bjr-landing {
+  --bjr-bg: #0d0f11;
+  --bjr-bg-alt: #111417;
+  --bjr-surface: #1b1f23;
+  --bjr-surface-2: #242a2f;
+  --bjr-border: #343b41;
+  --bjr-border-soft: #262c31;
+  --bjr-text: #eceef0;
+  --bjr-text-muted: #b6bcc2;
+  --bjr-amber: #f2a900;
+  --bjr-amber-deep: #c98600;
+  --bjr-redline: #d62828;
+  --bjr-redline-deep: #a81f1f;
+  --bjr-green: #2e7d4f;
+  --bjr-green-deep: #21603a;
+
+  background: var(--bjr-bg);
+  color: var(--bjr-text);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bjr-landing .bjr-display {
+  font-family: "Oxanium", ui-sans-serif, system-ui, sans-serif;
+}
+
+.bjr-landing a:focus-visible,
+.bjr-landing button:focus-visible {
+  outline: 2px solid var(--bjr-amber);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Brushed-steel micro-texture: thin diagonal hairlines at very low opacity,
+   pure CSS gradient (no image request). */
+.bjr-brushed {
+  background-image: repeating-linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.bjr-vignette {
+  background-image:
+    radial-gradient(ellipse 60% 50% at 18% 15%, rgba(242, 169, 0, 0.10), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(214, 40, 40, 0.08), transparent 55%);
+}
+
+/* Section divider — the one recurring structural motif, kept intentionally quiet
+   so it supports the gauge signature rather than competing with it. */
+.bjr-divider {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--bjr-amber) 20%,
+    var(--bjr-redline) 50%,
+    var(--bjr-amber) 80%,
+    transparent
+  );
+  opacity: 0.5;
+}
+
+.bjr-card {
+  background: var(--bjr-surface);
+  border: 1px solid var(--bjr-border-soft);
+  border-radius: 0.75rem;
+  transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.bjr-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--bjr-amber);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+}
+
+.bjr-plate {
+  font-family: "Oxanium", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+}
+
+/* Scroll reveal — final state is the accessible baseline; JS only adds the
+   .in-view class to trigger the transition. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bjr-needle {
+  transition: transform 900ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.bjr-arc-value {
+  transition: stroke-dashoffset 900ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .bjr-needle,
+  .bjr-arc-value,
+  .bjr-card {
+    transition: none !important;
+  }
+}
