@@ -49,6 +49,16 @@ function UnitCard({ unidade, index }: { unidade: Unidade; index: number }) {
           <FichaCampo label="Especialidade" value={unidade.especialidade} />
         </div>
 
+        <div className="mt-4 aspect-[16/9] w-full border border-aco/25">
+          <iframe
+            title={`Mapa — ${unidade.nome}`}
+            src={`https://maps.google.com/maps?q=${unidade.lat},${unidade.lng}&z=15&output=embed`}
+            loading="lazy"
+            className="h-full w-full grayscale"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+
         <div className="mt-5 flex flex-wrap gap-2">
           <CTAButton href={mapsUrl} variant="outline-dark">
             Rota: Maps
