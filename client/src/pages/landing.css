@@ -1,50 +1,56 @@
 /* ---------------------------------------------------------------------------
    Rede Vias Serviços Automotivos — sistema visual da homepage.
 
+   Princípio da página: UMA superfície escura contínua. Não há troca de cor de
+   fundo entre seções (nada de faixa clara / faixa escura alternando), porque
+   esse recorte quebrava a página em blocos soltos. A separação vem de
+   espaçamento, de uma linha de 1px e da luz ambiente que atravessa tudo — o
+   fundo é um só, do topo ao rodapé.
+
    Tudo fica sob .rv-landing para não vazar nos tokens do CRM (--background,
    --primary etc. em index.css).
 
-   Contraste (WCAG AA), pares checados:
+   Contraste (WCAG AA), pares checados sobre o fundo #08090B:
      #FFFFFF sobre #E10600 ......... 4,97:1  ✓ texto normal
-     #E10600 sobre #FFFFFF ......... 4,97:1  ✓ texto normal
-     #FF4438 sobre #0A0A0A ......... 5,79:1  ✓ texto normal em fundo preto
-     #E10600 sobre #0A0A0A ......... 4,22:1  — só título grande (≥24px bold)
-     #B9BDC4 sobre #0A0A0A ........ 10,50:1  ✓ texto de apoio no escuro
-     #4B4F55 sobre #F4F4F5 ......... 7,50:1  ✓ texto de apoio no claro
-   Por isso existem dois vermelhos: --rv-red para fundo claro e títulos
-   grandes, --rv-red-bright para texto pequeno sobre preto.
+     #FF4438 sobre #08090B ......... 5,90:1  ✓ texto normal
+     #E10600 sobre #08090B ......... 4,30:1  — só título grande (≥24px bold)
+     #C3C7CE sobre #08090B ........ 11,70:1  ✓ texto de apoio
+   Por isso existem dois vermelhos: --rv-red para superfícies e títulos
+   grandes, --rv-red-bright para texto pequeno.
 --------------------------------------------------------------------------- */
 
 .rv-landing {
-  --rv-black: #0a0a0a;
-  --rv-black-2: #121316;
-  --rv-graphite: #1a1c20;
-  --rv-graphite-2: #23262b;
+  --rv-bg: #08090b;
+  --rv-bg-elev: #101217;
+  --rv-surface: rgba(255, 255, 255, 0.042);
+  --rv-surface-forte: rgba(255, 255, 255, 0.07);
+  --rv-linha: rgba(255, 255, 255, 0.09);
+  --rv-linha-forte: rgba(255, 255, 255, 0.16);
+
   --rv-red: #e10600;
-  --rv-red-deep: #b30500;
+  --rv-red-deep: #a80400;
   --rv-red-bright: #ff4438;
   --rv-white: #ffffff;
-  --rv-off: #f4f4f5;
-  --rv-ink: #111214;
-  --rv-ink-muted: #4b4f55;
-  --rv-mist: #b9bdc4;
-  --rv-line-dark: rgba(255, 255, 255, 0.14);
-  --rv-line-light: rgba(17, 18, 20, 0.12);
+  --rv-mist: #c3c7ce;
+  --rv-mist-dim: #9aa0a9;
   --rv-whats: #0d7a5f;
-  --rv-whats-hover: #0a6650;
+  --rv-whats-hover: #0f9273;
+
   --rv-header-h: 4.5rem;
 
-  --rv-font-display: "Barlow Semi Condensed", "Barlow", "Inter",
-    ui-sans-serif, system-ui, sans-serif;
+  --rv-font-display: "Barlow Semi Condensed", "Barlow", "Inter", ui-sans-serif,
+    system-ui, sans-serif;
   --rv-font-body: "Barlow", "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  background: var(--rv-black);
+  position: relative;
+  background: var(--rv-bg);
   color: var(--rv-white);
   font-family: var(--rv-font-body);
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
+  scroll-behavior: smooth;
 }
 
 .rv-landing *,
@@ -66,9 +72,8 @@
   text-transform: uppercase;
 }
 
-/* Já as margens vão em :where() (especificidade zero) para que as regras de
-   componente mais abaixo — a margem de um título de rodapé, o espaço de um
-   parágrafo — vençam sem precisar de !important. */
+/* Margens em :where() (especificidade zero) para que as regras de componente
+   mais abaixo vençam sem precisar de !important. */
 :where(.rv-landing) :where(h1, h2, h3, h4, p) {
   margin: 0;
 }
@@ -80,53 +85,99 @@
 }
 
 .rv-landing section {
-  scroll-margin-top: var(--rv-header-h);
+  scroll-margin-top: calc(var(--rv-header-h) + 1rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Luz ambiente — a camada que substitui os cortes de fundo.
+
+   Fica fixa atrás de todo o conteúdo: manchas largas de vermelho a baixíssima
+   opacidade, uma malha sutil de asfalto e um grão fino. Como é `fixed`, o
+   conteúdo desliza por cima dela na rolagem e a página ganha profundidade sem
+   nenhuma troca de cor de seção e sem custo de JavaScript.
+--------------------------------------------------------------------------- */
+
+.rv-ambiente {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.rv-ambiente__luz {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60rem 40rem at 78% -5%, rgba(225, 6, 0, 0.2), transparent 62%),
+    radial-gradient(45rem 35rem at 5% 32%, rgba(225, 6, 0, 0.1), transparent 60%),
+    radial-gradient(55rem 40rem at 90% 78%, rgba(225, 6, 0, 0.13), transparent 62%),
+    radial-gradient(40rem 30rem at 20% 105%, rgba(225, 6, 0, 0.1), transparent 60%);
+}
+
+/* Malha de asfalto: linhas de 1px muito discretas, some nas bordas. */
+.rv-ambiente__malha {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 5.5rem 5.5rem;
+  mask-image: radial-gradient(80% 60% at 50% 40%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(80% 60% at 50% 40%, #000 20%, transparent 78%);
+}
+
+/* Grão: quebra o banding dos gradientes e dá textura de impressão. */
+.rv-ambiente__grao {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+}
+
+/* Todo o conteúdo navega acima da luz ambiente. */
+.rv-landing > *:not(.rv-ambiente) {
+  position: relative;
+  z-index: 1;
 }
 
 /* --- Estrutura ----------------------------------------------------------- */
 
 .rv-wrap {
   width: 100%;
-  max-width: 76rem;
+  max-width: 78rem;
   margin: 0 auto;
   padding: 0 1.25rem;
 }
 
 @media (min-width: 768px) {
   .rv-wrap {
-    padding: 0 2rem;
+    padding: 0 2.5rem;
   }
 }
 
 .rv-secao {
-  padding: 3.5rem 0;
+  padding: 4.5rem 0;
 }
 
 @media (min-width: 768px) {
   .rv-secao {
-    padding: 5rem 0;
+    padding: 7rem 0;
   }
 }
 
-.rv-secao--claro {
-  background: var(--rv-off);
-  color: var(--rv-ink);
-}
-
-.rv-secao--escuro {
-  background: var(--rv-black);
-  color: var(--rv-white);
-}
-
-.rv-secao--grafite {
-  background: var(--rv-graphite);
-  color: var(--rv-white);
-}
-
-/* Faixa vermelha fina que separa blocos — o "risco" recorrente das peças. */
-.rv-faixa {
-  height: 4px;
-  background: linear-gradient(90deg, var(--rv-red) 0%, var(--rv-red) 55%, var(--rv-red-deep) 100%);
+/* Separação entre seções: uma linha que nasce e morre no transparente —
+   sugere a divisão sem cortar o fundo. */
+.rv-secao + .rv-secao {
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.13) 22%,
+      rgba(255, 255, 255, 0.13) 78%,
+      transparent
+    )
+    1;
 }
 
 .rv-pular-para-conteudo {
@@ -135,7 +186,7 @@
   top: 0;
   z-index: 100;
   background: var(--rv-white);
-  color: var(--rv-ink);
+  color: #08090b;
   padding: 0.75rem 1rem;
   font-weight: 700;
 }
@@ -149,16 +200,15 @@
 
 /* O recurso recorrente da marca: linha 1 neutra + linha 2 vermelha. */
 .rv-titulo {
-  font-size: clamp(1.85rem, 6vw, 3.15rem);
+  font-size: clamp(1.95rem, 6vw, 3.4rem);
 }
 
 .rv-titulo--hero {
-  font-size: clamp(2.3rem, 9.2vw, 4.6rem);
+  font-size: clamp(2.4rem, 9.2vw, 4.8rem);
 }
 
-/* text-wrap: balance divide as linhas grandes em partes equilibradas — é o que
-   evita a órfã ("...MAIS / LONGE.") e reproduz a quebra das peças. Navegador
-   sem suporte simplesmente quebra como sempre. */
+/* text-wrap: balance divide as linhas grandes em partes equilibradas — evita a
+   órfã ("...MAIS / LONGE.") e reproduz a quebra das peças. */
 .rv-titulo__l1,
 .rv-titulo__l2 {
   display: block;
@@ -166,45 +216,33 @@
 }
 
 .rv-titulo__l2 {
-  color: var(--rv-red);
-}
-
-/* Sobre preto, o vermelho da linha 2 só é usado em corpo grande (≥24px bold),
-   onde 4,22:1 já satisfaz o AA para texto largo. */
-.rv-secao--escuro .rv-titulo__l2,
-.rv-secao--grafite .rv-titulo__l2,
-.rv-hero .rv-titulo__l2 {
   color: var(--rv-red-bright);
 }
 
 .rv-chapeu {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
   font-family: var(--rv-font-display);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--rv-red-bright);
 }
 
-.rv-secao--claro .rv-chapeu {
-  color: var(--rv-red);
-}
-
 .rv-chapeu::before {
   content: "";
-  width: 1.75rem;
+  width: 2rem;
   height: 3px;
   background: currentColor;
+  box-shadow: 0 0 14px rgba(255, 68, 56, 0.8);
 }
 
-/* Variante usada quando o chapéu é o próprio título da seção (sem headline
-   grande abaixo): ocupa a linha inteira e reserva o espaço do bloco seguinte. */
 .rv-chapeu--bloco {
   display: flex;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .rv-apoio {
@@ -212,20 +250,22 @@
   font-size: 1.02rem;
 }
 
-.rv-secao--claro .rv-apoio {
-  color: var(--rv-ink-muted);
+.rv-secao__cabecalho {
+  max-width: 40rem;
+  margin-bottom: 3rem;
 }
 
 /* --- Botões -------------------------------------------------------------- */
 
 .rv-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  padding: 0.8rem 1.4rem;
+  padding: 0.85rem 1.5rem;
   border: 2px solid transparent;
-  border-radius: 0.4rem;
+  border-radius: 0.45rem;
   font-family: var(--rv-font-display);
   font-size: 0.95rem;
   font-weight: 700;
@@ -234,56 +274,83 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
-    transform 180ms ease;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease,
+    transform 200ms ease, box-shadow 200ms ease;
 }
 
 .rv-btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .rv-btn--primario {
   background: var(--rv-red);
   color: var(--rv-white);
+  box-shadow: 0 8px 24px -10px rgba(225, 6, 0, 0.9);
 }
 
 .rv-btn--primario:hover {
-  background: var(--rv-red-deep);
+  background: #f10800;
+  box-shadow: 0 14px 34px -10px rgba(225, 6, 0, 1);
 }
 
 .rv-btn--whats {
   background: var(--rv-whats);
   color: var(--rv-white);
+  box-shadow: 0 8px 24px -12px rgba(13, 122, 95, 0.9);
 }
 
 .rv-btn--whats:hover {
   background: var(--rv-whats-hover);
+  box-shadow: 0 14px 32px -12px rgba(15, 146, 115, 1);
 }
 
-.rv-btn--contorno-claro {
-  border-color: rgba(255, 255, 255, 0.6);
+.rv-btn--fantasma {
+  border-color: var(--rv-linha-forte);
   color: var(--rv-white);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.rv-btn--contorno-claro:hover {
-  background: var(--rv-white);
-  color: var(--rv-ink);
-}
-
-.rv-btn--contorno-escuro {
-  border-color: var(--rv-ink);
-  color: var(--rv-ink);
-  background: transparent;
-}
-
-.rv-btn--contorno-escuro:hover {
-  background: var(--rv-ink);
-  color: var(--rv-white);
+.rv-btn--fantasma:hover {
+  border-color: var(--rv-white);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .rv-btn--bloco {
   width: 100%;
+}
+
+/* --- Cartão de vidro ----------------------------------------------------- */
+
+.rv-cartao {
+  position: relative;
+  background: var(--rv-surface);
+  border: 1px solid var(--rv-linha);
+  border-radius: 0.9rem;
+  overflow: hidden;
+  transition: transform 260ms ease, border-color 260ms ease, background-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+/* Brilho vermelho que sobe pela base do card no hover. */
+.rv-cartao::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--rv-red), transparent);
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+.rv-cartao:hover {
+  transform: translateY(-5px);
+  background: var(--rv-surface-forte);
+  border-color: rgba(225, 6, 0, 0.5);
+  box-shadow: 0 24px 50px -26px rgba(0, 0, 0, 0.95), 0 0 34px -22px rgba(225, 6, 0, 0.9);
+}
+
+.rv-cartao:hover::after {
+  opacity: 1;
 }
 
 /* --- Logotipo ------------------------------------------------------------ */
@@ -310,8 +377,7 @@
 }
 
 /* inline-block para a caixa encolher até o "VIAS": é o que ancora a curva
-   junto do "S" em vez de jogá-la na borda direita do logotipo. O padding
-   reserva o espaço da curva dentro da caixa, sem overflow. */
+   junto do "S" em vez de jogá-la na borda direita do logotipo. */
 .rv-logo__linha-vias {
   position: relative;
   display: inline-block;
@@ -328,7 +394,6 @@
   color: var(--rv-red);
 }
 
-/* A curva de rodovia sai do "S" e sobe para a direita, como nas peças. */
 .rv-logo__curva {
   position: absolute;
   right: -0.06em;
@@ -361,21 +426,23 @@
   border-radius: 2px;
 }
 
-/* Sobre fundo claro o "REDE" e a assinatura viram pretos. */
-.rv-logo--escuro .rv-logo__rede,
-.rv-logo--escuro .rv-logo__tagline-texto {
-  color: var(--rv-ink);
-}
-
 /* --- Header -------------------------------------------------------------- */
 
 .rv-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(10, 10, 10, 0.94);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--rv-line-dark);
+  background: rgba(8, 9, 11, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--rv-linha);
+  transition: background-color 260ms ease, border-color 260ms ease;
+}
+
+/* Fica opaco assim que a página rola, para o menu não competir com o conteúdo. */
+.rv-header--rolado {
+  background: rgba(8, 9, 11, 0.94);
+  border-bottom-color: rgba(225, 6, 0, 0.35);
 }
 
 .rv-header__barra {
@@ -411,11 +478,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: transparent;
-  border: 2px solid var(--rv-line-dark);
-  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--rv-linha-forte);
+  border-radius: 0.45rem;
   color: var(--rv-white);
-  padding: 0.55rem 0.7rem;
+  padding: 0.55rem 0.8rem;
   font-family: var(--rv-font-display);
   font-size: 0.85rem;
   font-weight: 700;
@@ -424,29 +491,11 @@
   cursor: pointer;
 }
 
-.rv-nav__link {
-  font-family: var(--rv-font-display);
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--rv-white);
-  text-decoration: none;
-  padding: 0.35rem 0;
-  border-bottom: 2px solid transparent;
-  transition: color 160ms ease, border-color 160ms ease;
-}
-
-.rv-nav__link:hover {
-  color: var(--rv-red-bright);
-  border-bottom-color: var(--rv-red);
-}
-
 @media (min-width: 1024px) {
   .rv-nav {
     display: flex;
     align-items: center;
-    gap: 1.4rem;
+    gap: 1.5rem;
   }
 
   .rv-header__acoes {
@@ -456,7 +505,7 @@
   }
 
   .rv-header__acoes .rv-btn {
-    padding: 0.7rem 1rem;
+    padding: 0.7rem 1.1rem;
     font-size: 0.88rem;
   }
 
@@ -465,25 +514,61 @@
   }
 }
 
+.rv-nav__link {
+  position: relative;
+  font-family: var(--rv-font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rv-white);
+  text-decoration: none;
+  padding: 0.4rem 0;
+  transition: color 180ms ease;
+}
+
+/* Sublinhado que cresce do centro. */
+.rv-nav__link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--rv-red);
+  transform: translateX(-50%);
+  transition: width 240ms ease;
+}
+
+.rv-nav__link:hover {
+  color: var(--rv-red-bright);
+}
+
+.rv-nav__link:hover::after {
+  width: 100%;
+}
+
 /* Painel do menu mobile */
 .rv-menu-mobile {
-  border-top: 1px solid var(--rv-line-dark);
-  background: var(--rv-black);
-  padding: 1rem 0 1.5rem;
+  border-top: 1px solid var(--rv-linha);
+  background: rgba(8, 9, 11, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 1rem 0 1.75rem;
 }
 
 .rv-menu-mobile__lista {
   display: flex;
   flex-direction: column;
-  margin: 0 0 1rem;
+  margin: 0 0 1.25rem;
   padding: 0;
   list-style: none;
 }
 
 .rv-menu-mobile__link {
   display: block;
-  padding: 0.85rem 0.25rem;
-  border-bottom: 1px solid var(--rv-line-dark);
+  padding: 0.9rem 0.25rem;
+  border-bottom: 1px solid var(--rv-linha);
   font-family: var(--rv-font-display);
   font-size: 1.15rem;
   font-weight: 700;
@@ -503,14 +588,16 @@
 .rv-hero {
   position: relative;
   isolation: isolate;
-  background: var(--rv-black);
   overflow: hidden;
+  min-height: min(90vh, 46rem);
+  display: flex;
+  align-items: center;
 }
 
 .rv-hero__fundo {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
 }
 
 .rv-hero__fundo > * {
@@ -520,35 +607,57 @@
   display: block;
 }
 
-/* Véu escuro: garante o contraste do texto sobre qualquer foto que entre. */
+/* Véu: garante o contraste do texto sobre qualquer foto que entre no lugar
+   da cena em SVG, e funde o hero no fundo contínuo da página. */
 .rv-hero__veu {
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: linear-gradient(
+  z-index: -2;
+  background:
+    linear-gradient(
       100deg,
-      rgba(10, 10, 10, 0.92) 0%,
-      rgba(10, 10, 10, 0.72) 45%,
-      rgba(10, 10, 10, 0.22) 100%
+      rgba(8, 9, 11, 0.96) 0%,
+      rgba(8, 9, 11, 0.78) 44%,
+      rgba(8, 9, 11, 0.3) 100%
     ),
-    linear-gradient(0deg, rgba(10, 10, 10, 0.8) 0%, rgba(10, 10, 10, 0) 42%);
+    linear-gradient(0deg, var(--rv-bg) 2%, rgba(8, 9, 11, 0) 42%);
 }
 
+/* Marca d'água tipográfica: o wordmark gigante, quase apagado, atrás de tudo. */
+.rv-hero__marca-agua {
+  position: absolute;
+  right: -3%;
+  bottom: 4%;
+  z-index: -1;
+  font-family: var(--rv-font-display);
+  font-size: clamp(7rem, 21vw, 19rem);
+  font-weight: 800;
+  font-style: italic;
+  line-height: 0.8;
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 53rem cabe "COM A REDE VIAS," em uma linha no tamanho máximo do título —
+   abaixo disso a linha 1 quebra e a headline perde o impacto das peças. */
 .rv-hero__conteudo {
-  padding: 3rem 0 3.5rem;
-  max-width: 48rem;
+  padding: 4rem 0;
+  max-width: 53rem;
 }
 
 @media (min-width: 768px) {
   .rv-hero__conteudo {
-    padding: 5.5rem 0 6rem;
+    padding: 6rem 0;
   }
 }
 
 .rv-hero__texto {
-  margin: 1.6rem 0 2rem;
+  margin: 1.75rem 0 2.25rem;
   max-width: 34rem;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   color: var(--rv-mist);
 }
 
@@ -568,11 +677,11 @@
 .rv-hero__selo {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  margin-top: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rv-line-dark);
-  font-size: 0.9rem;
+  gap: 0.6rem 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rv-linha);
+  font-size: 0.92rem;
   color: var(--rv-mist);
 }
 
@@ -581,6 +690,58 @@
   font-family: var(--rv-font-display);
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* Rastros de luz cruzando o hero — o movimento é lento e de baixa opacidade
+   de propósito: sugere velocidade sem disputar com o texto. */
+.rv-hero__rastros {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rv-rastro {
+  position: absolute;
+  height: 1px;
+  width: 24rem;
+  background: linear-gradient(90deg, transparent, rgba(255, 68, 56, 0.75), transparent);
+  transform: rotate(-18deg);
+  opacity: 0;
+  animation: rv-passar 7s linear infinite;
+}
+
+.rv-rastro:nth-child(1) {
+  top: 24%;
+  animation-delay: 0s;
+}
+.rv-rastro:nth-child(2) {
+  top: 52%;
+  width: 16rem;
+  animation-delay: 2.4s;
+}
+.rv-rastro:nth-child(3) {
+  top: 74%;
+  width: 30rem;
+  animation-delay: 4.6s;
+}
+
+@keyframes rv-passar {
+  0% {
+    left: -30rem;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    left: 108%;
+    opacity: 0;
+  }
 }
 
 /* --- Diferenciais -------------------------------------------------------- */
@@ -606,36 +767,39 @@
 .rv-diferencial {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  padding: 1.15rem 1.15rem;
-  background: var(--rv-black-2);
-  border: 1px solid var(--rv-line-dark);
-  border-radius: 0.6rem;
+  gap: 1rem;
+  padding: 1.35rem;
 }
 
 .rv-diferencial__icone {
   flex: none;
   display: grid;
   place-items: center;
-  width: 3rem;
-  height: 3rem;
+  width: 3.2rem;
+  height: 3.2rem;
   border-radius: 50%;
   border: 2px solid var(--rv-red);
   color: var(--rv-red-bright);
+  background: radial-gradient(circle at 50% 50%, rgba(225, 6, 0, 0.22), transparent 70%);
+  transition: box-shadow 260ms ease;
+}
+
+.rv-cartao:hover .rv-diferencial__icone {
+  box-shadow: 0 0 22px -4px rgba(225, 6, 0, 0.85);
 }
 
 .rv-diferencial__icone svg {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
 }
 
 .rv-diferencial__titulo {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   letter-spacing: 0.04em;
 }
 
 .rv-diferencial__desc {
-  font-size: 0.92rem;
+  font-size: 0.93rem;
   color: var(--rv-mist);
   line-height: 1.35;
 }
@@ -644,85 +808,92 @@
 
 .rv-servicos {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
   grid-template-columns: repeat(2, 1fr);
-  margin-top: 2.25rem;
 }
 
 @media (min-width: 768px) {
   .rv-servicos {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
   }
 }
 
 .rv-servico {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  padding: 1.25rem 1rem;
-  background: var(--rv-white);
-  border: 1px solid var(--rv-line-light);
-  border-radius: 0.6rem;
-  /* Faixa vermelha por dentro da borda: acompanha o raio do card, ao
-     contrário de um border-bottom, que descola nos cantos arredondados. */
-  box-shadow: inset 0 -3px 0 0 var(--rv-red);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-
-.rv-servico:hover {
-  transform: translateY(-3px);
-  box-shadow: inset 0 -3px 0 0 var(--rv-red), 0 14px 30px -18px rgba(0, 0, 0, 0.55);
+  gap: 0.65rem;
+  padding: 1.6rem 1.35rem;
 }
 
 .rv-servico__icone {
   display: grid;
   place-items: center;
-  width: 2.9rem;
-  height: 2.9rem;
-  border-radius: 0.5rem;
-  background: var(--rv-ink);
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 0.7rem;
+  background: linear-gradient(145deg, rgba(225, 6, 0, 0.9), rgba(168, 4, 0, 0.55));
   color: var(--rv-white);
+  box-shadow: 0 10px 26px -14px rgba(225, 6, 0, 0.95);
+  transition: transform 260ms ease;
+}
+
+.rv-cartao:hover .rv-servico__icone {
+  transform: scale(1.06) rotate(-3deg);
 }
 
 .rv-servico__icone svg {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.85rem;
+  height: 1.85rem;
 }
 
 .rv-servico__nome {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   letter-spacing: 0.05em;
-  color: var(--rv-ink);
+  /* "BALANCEAMENTO" é a palavra mais longa do set e estoura a coluna de 2
+     cards no celular; sem isto o card (overflow: hidden) a corta. */
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 479px) {
+  .rv-servico {
+    padding: 1.25rem 1rem;
+  }
+
+  .rv-servico__nome {
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+  }
 }
 
 .rv-servico__desc {
-  font-size: 0.88rem;
-  line-height: 1.4;
-  color: var(--rv-ink-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--rv-mist);
 }
 
 /* --- Prevenção / confiança ---------------------------------------------- */
 
 .rv-prevencao {
   display: grid;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
 }
 
 @media (min-width: 1024px) {
   .rv-prevencao {
     grid-template-columns: 1.05fr 0.95fr;
-    gap: 3.5rem;
+    gap: 4rem;
   }
 }
 
 .rv-prevencao__figura {
   position: relative;
-  border-radius: 0.75rem;
+  margin: 0;
+  border-radius: 1rem;
   overflow: hidden;
-  border: 1px solid var(--rv-line-dark);
+  border: 1px solid var(--rv-linha);
   aspect-ratio: 4 / 3;
+  box-shadow: 0 34px 70px -40px rgba(0, 0, 0, 1);
 }
 
 .rv-prevencao__figura > * {
@@ -732,17 +903,32 @@
   display: block;
 }
 
+/* Diagonal vermelha do wrap atravessando a imagem. */
+.rv-prevencao__figura::after {
+  content: "";
+  position: absolute;
+  left: -10%;
+  bottom: -18%;
+  width: 130%;
+  height: 16%;
+  background: linear-gradient(90deg, var(--rv-red), rgba(225, 6, 0, 0));
+  transform: rotate(-11deg);
+  transform-origin: left bottom;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .rv-prevencao__lista {
   list-style: none;
-  margin: 1.5rem 0 0;
+  margin: 1.75rem 0 0;
   padding: 0;
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .rv-prevencao__item {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.85rem;
   align-items: flex-start;
   font-size: 1rem;
   color: var(--rv-mist);
@@ -750,31 +936,33 @@
 
 .rv-prevencao__marcador {
   flex: none;
-  width: 0.55rem;
-  height: 0.55rem;
+  width: 0.6rem;
+  height: 0.6rem;
   margin-top: 0.5rem;
   background: var(--rv-red);
   transform: skewX(-18deg);
+  box-shadow: 0 0 12px rgba(225, 6, 0, 0.9);
 }
 
 /* Selo "Revisão em dia, problemas ficam pelo caminho!" */
 .rv-selo-revisao {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding: 1.1rem 1.25rem;
-  background: var(--rv-black-2);
+  gap: 1.1rem;
+  margin-top: 2.25rem;
+  padding: 1.25rem 1.4rem;
+  background: linear-gradient(100deg, rgba(225, 6, 0, 0.16), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(225, 6, 0, 0.3);
   border-left: 4px solid var(--rv-red);
-  border-radius: 0.4rem;
+  border-radius: 0.6rem;
 }
 
 .rv-selo-revisao__icone {
   flex: none;
   display: grid;
   place-items: center;
-  width: 3.1rem;
-  height: 3.1rem;
+  width: 3.2rem;
+  height: 3.2rem;
   border-radius: 50%;
   border: 2px solid var(--rv-red);
   color: var(--rv-red-bright);
@@ -787,7 +975,7 @@
 
 .rv-selo-revisao__texto {
   font-family: var(--rv-font-display);
-  font-size: clamp(1.05rem, 3.4vw, 1.4rem);
+  font-size: clamp(1.1rem, 3.4vw, 1.45rem);
   font-weight: 800;
   line-height: 1.1;
   text-transform: uppercase;
@@ -798,163 +986,218 @@
   color: var(--rv-red-bright);
 }
 
-/* --- Unidades (abas) ----------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+   Unidades — lista à esquerda, painel grande à direita.
 
-.rv-abas {
-  display: flex;
-  gap: 0.5rem;
-  margin: 2rem 0 1.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.35rem;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
+   Substitui as abas antigas: em vez de quatro botões e um card, as quatro
+   lojas ficam sempre visíveis numa coluna (endereço e telefone à mostra, sem
+   precisar clicar para descobrir) e a selecionada abre no painel com mapa e
+   ações. Nenhuma unidade fica escondida e a seção não estica a página.
+--------------------------------------------------------------------------- */
 
-.rv-aba {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.1rem;
-  background: var(--rv-white);
-  border: 2px solid var(--rv-line-light);
-  border-radius: 0.45rem;
-  font-family: var(--rv-font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--rv-ink);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
-}
-
-.rv-aba:hover {
-  border-color: var(--rv-red);
-}
-
-.rv-aba[aria-selected="true"] {
-  background: var(--rv-red);
-  border-color: var(--rv-red);
-  color: var(--rv-white);
-}
-
-.rv-aba__pin {
-  width: 1.05rem;
-  height: 1.05rem;
-  flex: none;
-}
-
-.rv-unidade {
+.rv-unidades {
   display: grid;
-  gap: 0;
-  background: var(--rv-white);
-  border: 1px solid var(--rv-line-light);
-  border-radius: 0.75rem;
-  overflow: hidden;
+  gap: 1.5rem;
 }
 
-@media (min-width: 900px) {
-  .rv-unidade {
-    grid-template-columns: 1fr 1.1fr;
+@media (min-width: 1024px) {
+  .rv-unidades {
+    grid-template-columns: 24rem 1fr;
+    gap: 2rem;
+    align-items: stretch;
   }
 }
 
-.rv-unidade__dados {
-  padding: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .rv-unidade__dados {
-    padding: 2rem;
-  }
-}
-
-.rv-unidade__nome {
-  font-size: clamp(1.5rem, 5vw, 2.1rem);
-  color: var(--rv-ink);
-}
-
-.rv-unidade__nome span {
-  display: block;
-  color: var(--rv-red);
-}
-
-.rv-unidade__linha {
-  display: flex;
-  gap: 0.7rem;
-  align-items: flex-start;
-  margin-top: 1rem;
-  color: var(--rv-ink);
-  font-size: 1rem;
-}
-
-.rv-unidade__linha svg {
-  flex: none;
-  width: 1.15rem;
-  height: 1.15rem;
-  margin-top: 0.22rem;
-  color: var(--rv-red);
-}
-
-.rv-unidade__complemento {
-  display: block;
-  color: var(--rv-ink-muted);
-  font-size: 0.92rem;
-}
-
-.rv-unidade__acoes {
+/* As quatro lojas dividem a altura do painel: a coluna fica alinhada com o
+   mapa em vez de sobrar espaço embaixo. */
+.rv-unidades__lista {
   display: grid;
-  gap: 0.6rem;
-  margin-top: 1.5rem;
+  gap: 0.75rem;
+  grid-auto-rows: 1fr;
 }
 
-@media (min-width: 480px) {
-  .rv-unidade__acoes {
+@media (min-width: 600px) and (max-width: 1023px) {
+  .rv-unidades__lista {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.rv-unidade__mapa {
+.rv-unidade-item {
   position: relative;
-  min-height: 260px;
-  background: var(--rv-graphite);
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1.25rem 1.35rem 1.25rem 1.6rem;
+  background: var(--rv-surface);
+  border: 1px solid var(--rv-linha);
+  border-radius: 0.75rem;
+  color: var(--rv-white);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 220ms ease, border-color 220ms ease, transform 220ms ease;
 }
 
-/* Fica atrás do iframe: se o mapa não carregar (rede, bloqueio de terceiros),
-   o visitante ainda vê o endereço em vez de um retângulo vazio. */
-.rv-unidade__mapa-alternativa {
+/* Marcador vermelho da unidade ativa. */
+.rv-unidade-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 0;
+  background: var(--rv-red);
+  border-radius: 0 3px 3px 0;
+  transform: translateY(-50%);
+  transition: height 260ms ease;
+}
+
+.rv-unidade-item:hover {
+  background: var(--rv-surface-forte);
+  border-color: var(--rv-linha-forte);
+  transform: translateX(3px);
+}
+
+.rv-unidade-item[aria-selected="true"] {
+  background: linear-gradient(100deg, rgba(225, 6, 0, 0.18), rgba(255, 255, 255, 0.04));
+  border-color: rgba(225, 6, 0, 0.55);
+}
+
+.rv-unidade-item[aria-selected="true"]::before {
+  height: 62%;
+  box-shadow: 0 0 16px rgba(225, 6, 0, 0.9);
+}
+
+.rv-unidade-item__topo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rv-unidade-item__topo svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--rv-red-bright);
+}
+
+.rv-unidade-item__nome {
+  font-family: var(--rv-font-display);
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* block, não inline: sem isso o endereço e o telefone saem colados na mesma
+   linha ("Santos/SP(13) 99622-6147"). */
+.rv-unidade-item__endereco {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.89rem;
+  line-height: 1.45;
+  color: var(--rv-mist);
+}
+
+.rv-unidade-item__tel {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rv-red-bright);
+}
+
+/* Painel da unidade selecionada */
+.rv-unidade-painel {
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--rv-linha);
+  background: var(--rv-bg-elev);
+  box-shadow: 0 34px 70px -44px rgba(0, 0, 0, 1);
+}
+
+.rv-unidade-painel__mapa {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  min-height: 15rem;
+  background: #14171c;
+}
+
+@media (min-width: 1024px) {
+  .rv-unidade-painel__mapa {
+    aspect-ratio: 16 / 8;
+  }
+}
+
+/* Cartão de endereço que ocupa a área do mapa quando o Google não está
+   disponível. Fica atrás do iframe, então some sozinho assim que o mapa
+   monta. É desenhado para parecer intencional, não um buraco. */
+.rv-unidade-painel__alternativa {
   position: absolute;
   inset: 0;
   z-index: 0;
   display: grid;
   align-content: center;
-  gap: 0.35rem;
+  justify-items: center;
+  gap: 0.55rem;
   padding: 1.5rem;
-  color: var(--rv-white);
   text-align: center;
+  background:
+    radial-gradient(28rem 14rem at 50% 45%, rgba(225, 6, 0, 0.16), transparent 70%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.022) 0 1px,
+      transparent 1px 12px
+    );
 }
 
-.rv-unidade__mapa-alternativa svg {
+.rv-unidade-painel__pino {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  border: 2px solid var(--rv-red);
+  color: var(--rv-red-bright);
+  background: rgba(225, 6, 0, 0.1);
+}
+
+.rv-unidade-painel__pino svg {
   width: 1.6rem;
   height: 1.6rem;
-  margin: 0 auto;
-  color: var(--rv-red-bright);
 }
 
-.rv-unidade__mapa-alternativa strong {
+.rv-unidade-painel__alternativa strong {
   font-family: var(--rv-font-display);
-  letter-spacing: 0.08em;
+  font-size: 1.15rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
-.rv-unidade__mapa-alternativa span {
+.rv-unidade-painel__alternativa-end {
   color: var(--rv-mist);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  max-width: 22rem;
 }
 
-.rv-unidade__mapa iframe {
+.rv-unidade-painel__alternativa-link {
+  margin-top: 0.35rem;
+  font-family: var(--rv-font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rv-red-bright);
+  text-decoration: none;
+  border-bottom: 2px solid rgba(255, 68, 56, 0.45);
+  padding-bottom: 2px;
+}
+
+.rv-unidade-painel__alternativa-link:hover {
+  border-bottom-color: var(--rv-red-bright);
+}
+
+.rv-unidade-painel__mapa iframe {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -962,65 +1205,129 @@
   height: 100%;
   border: 0;
   display: block;
+  /* Sem filter aqui, de propósito. Qualquer filtro (invert, brightness) força
+     o iframe a pintar a própria tela de fundo, e um mapa que falhou vira um
+     retângulo claro no meio da seção. Sem filtro, o iframe bloqueado não
+     pinta nada e quem aparece é o endereço que está atrás dele. */
+  opacity: 0;
+  transition: opacity 400ms ease;
 }
 
-.rv-unidade__mapa-link {
-  position: absolute;
+.rv-unidade-painel__mapa--carregado iframe {
+  opacity: 1;
+}
+
+.rv-unidade-painel__dados {
+  position: relative;
   z-index: 2;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  background: var(--rv-white);
-  color: var(--rv-ink);
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.45rem 0.7rem;
-  border-radius: 0.35rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--rv-linha);
+}
+
+@media (min-width: 768px) {
+  .rv-unidade-painel__dados {
+    padding: 2rem;
+  }
+}
+
+.rv-unidade-painel__nome {
+  font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+}
+
+.rv-unidade-painel__nome span {
+  display: block;
+  color: var(--rv-red-bright);
+}
+
+.rv-unidade-painel__linha {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: var(--rv-white);
+}
+
+.rv-unidade-painel__linha svg {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.22rem;
+  color: var(--rv-red-bright);
+}
+
+.rv-unidade-painel__linha a {
+  color: inherit;
   text-decoration: none;
-  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4);
+}
+
+.rv-unidade-painel__linha a:hover {
+  color: var(--rv-red-bright);
+}
+
+.rv-unidade-painel__complemento {
+  display: block;
+  color: var(--rv-mist);
+  font-size: 0.92rem;
+}
+
+.rv-unidade-painel__acoes {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .rv-unidade-painel__acoes {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* --- Chamada final ------------------------------------------------------- */
 
-/* Fecho no mesmo tratamento da tarja das peças: fundo preto, linha 1 branca,
-   linha 2 vermelha — o par de maior contraste da paleta (5,79:1). */
 .rv-cta-final {
   position: relative;
   overflow: hidden;
-  background: var(--rv-black-2);
-  color: var(--rv-white);
   text-align: center;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(225, 6, 0, 0.3);
+  background:
+    radial-gradient(50rem 22rem at 50% 0%, rgba(225, 6, 0, 0.28), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  padding: 3.5rem 1.5rem;
 }
 
-/* Cunhas vermelhas na diagonal, como o grafismo do wrap da picape. */
+@media (min-width: 768px) {
+  .rv-cta-final {
+    padding: 5rem 3rem;
+  }
+}
+
+/* Cunhas vermelhas na diagonal, presas às bordas — o grafismo é moldura, o
+   conteúdo continua sobre o fundo escuro. */
 .rv-cta-final::before,
 .rv-cta-final::after {
   content: "";
   position: absolute;
+  top: -30%;
+  height: 160%;
   background: var(--rv-red);
+  transform: rotate(18deg);
   pointer-events: none;
 }
 
-/* Ficam presas à borda direita, longe da coluna de texto — o grafismo é
-   moldura, o conteúdo continua sobre preto. */
 .rv-cta-final::before {
-  top: -30%;
   right: -7%;
-  width: 11%;
-  height: 160%;
-  transform: rotate(18deg);
-  opacity: 0.9;
+  width: 10%;
+  opacity: 0.85;
 }
 
 .rv-cta-final::after {
-  top: -30%;
-  right: 7%;
-  width: 4%;
-  height: 160%;
-  transform: rotate(18deg);
+  left: -7%;
+  width: 5%;
   opacity: 0.5;
 }
 
-/* Em telas estreitas a coluna de texto ocupa a largura toda: sem grafismo. */
 @media (max-width: 899px) {
   .rv-cta-final::before,
   .rv-cta-final::after {
@@ -1033,12 +1340,8 @@
   z-index: 1;
 }
 
-.rv-cta-final .rv-titulo__l2 {
-  color: var(--rv-red-bright);
-}
-
 .rv-cta-final__texto {
-  margin: 1rem auto 1.75rem;
+  margin: 1.25rem auto 2rem;
   max-width: 34rem;
   font-size: 1.05rem;
   color: var(--rv-mist);
@@ -1057,18 +1360,17 @@
   }
 }
 
-
 /* --- Rodapé -------------------------------------------------------------- */
 
 .rv-rodape {
-  background: var(--rv-black);
-  border-top: 1px solid var(--rv-line-dark);
-  padding: 3rem 0 1.5rem;
+  border-top: 1px solid var(--rv-linha);
+  padding: 4rem 0 1.5rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55));
 }
 
 .rv-rodape__grade {
   display: grid;
-  gap: 2.25rem;
+  gap: 2.5rem;
 }
 
 @media (min-width: 768px) {
@@ -1082,7 +1384,7 @@
   font-size: 0.9rem;
   letter-spacing: 0.16em;
   color: var(--rv-white);
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .rv-rodape__lista {
@@ -1090,23 +1392,24 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.6rem;
+  gap: 0.65rem;
 }
 
 .rv-rodape__link {
   color: var(--rv-mist);
   text-decoration: none;
   font-size: 0.95rem;
-  transition: color 160ms ease;
+  transition: color 160ms ease, padding-left 160ms ease;
 }
 
 .rv-rodape__link:hover {
   color: var(--rv-red-bright);
+  padding-left: 0.3rem;
 }
 
 .rv-rodape__unidades {
   display: grid;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 @media (min-width: 520px) {
@@ -1118,7 +1421,7 @@
 .rv-rodape__unidade {
   font-size: 0.9rem;
   color: var(--rv-mist);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .rv-rodape__unidade strong {
@@ -1143,23 +1446,24 @@
 .rv-rodape__social {
   display: flex;
   gap: 0.6rem;
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
 }
 
 .rv-rodape__social a {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 1px solid var(--rv-line-dark);
-  border-radius: 0.45rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid var(--rv-linha);
+  border-radius: 0.5rem;
   color: var(--rv-white);
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition: background-color 200ms ease, border-color 200ms ease, transform 200ms ease;
 }
 
 .rv-rodape__social a:hover {
   background: var(--rv-red);
   border-color: var(--rv-red);
+  transform: translateY(-2px);
 }
 
 .rv-rodape__social svg {
@@ -1173,9 +1477,9 @@
   gap: 0.75rem;
   align-items: center;
   justify-content: space-between;
-  margin-top: 2.5rem;
+  margin-top: 3rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--rv-line-dark);
+  border-top: 1px solid var(--rv-linha);
   font-size: 0.85rem;
   color: var(--rv-mist);
   text-align: center;
@@ -1199,10 +1503,14 @@
 
 /* --- Movimento ----------------------------------------------------------- */
 
+/* Revelação com escalonamento: cada filho entra um pouco depois do anterior,
+   via --i definido no elemento. */
 .rv-revelar {
   opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 550ms ease, transform 550ms ease;
+  transform: translateY(22px);
+  transition: opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 85ms);
 }
 
 .rv-revelar.rv-visivel {
@@ -1211,7 +1519,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rv-landing * {
+  .rv-landing {
+    scroll-behavior: auto;
+  }
+
+  .rv-landing *,
+  .rv-landing *::before,
+  .rv-landing *::after {
     animation: none !important;
     transition: none !important;
   }

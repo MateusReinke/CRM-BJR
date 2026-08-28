@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import {
-  Instagram,
   Globe,
+  Instagram,
   MapPin,
   Menu,
   MessageCircle,
@@ -45,6 +45,9 @@ const CTA_WHATSAPP = linkWhatsApp(
   UNIDADE_PADRAO.whatsapp,
   `Olá! Vim pelo site da ${MARCA.nome} e gostaria de agendar um serviço.`,
 );
+
+const msgUnidade = (nome: string) =>
+  `Olá! Gostaria de agendar um serviço na ${MARCA.nome} ${nome}.`;
 
 /** Revela um bloco quando ele entra na viewport (uma vez só). */
 function useRevelar<T extends HTMLElement>() {
@@ -103,6 +106,14 @@ function TituloDuplo({
 
 function Header() {
   const [aberto, setAberto] = useState(false);
+  const [rolado, setRolado] = useState(false);
+
+  useEffect(() => {
+    const aoRolar = () => setRolado(window.scrollY > 24);
+    aoRolar();
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => window.removeEventListener("scroll", aoRolar);
+  }, []);
 
   // Fecha no Esc e trava o scroll do corpo enquanto o painel está aberto.
   useEffect(() => {
@@ -120,7 +131,7 @@ function Header() {
   }, [aberto]);
 
   return (
-    <header className="rv-header">
+    <header className={`rv-header ${rolado ? "rv-header--rolado" : ""}`}>
       <div className="rv-wrap">
         <div className="rv-header__barra">
           <a href="#inicio" aria-label={`${MARCA.nomeCompleto} — início`}>
@@ -154,11 +165,7 @@ function Header() {
             aria-controls="rv-menu-mobile"
             onClick={() => setAberto((v) => !v)}
           >
-            {aberto ? (
-              <X aria-hidden="true" size={20} />
-            ) : (
-              <Menu aria-hidden="true" size={20} />
-            )}
+            {aberto ? <X aria-hidden="true" size={20} /> : <Menu aria-hidden="true" size={20} />}
             {aberto ? "Fechar" : "Menu"}
           </button>
         </div>
@@ -193,7 +200,7 @@ function Header() {
               </a>
               <Link
                 href="/auth"
-                className="rv-btn rv-btn--contorno-claro rv-btn--bloco"
+                className="rv-btn rv-btn--fantasma rv-btn--bloco"
                 onClick={() => setAberto(false)}
               >
                 Acesso ao sistema
@@ -217,6 +224,14 @@ function Hero() {
         <FotoOuCena foto={FOTOS.hero} prioridade />
       </div>
       <div className="rv-hero__veu" />
+      <div className="rv-hero__rastros" aria-hidden="true">
+        <span className="rv-rastro" />
+        <span className="rv-rastro" />
+        <span className="rv-rastro" />
+      </div>
+      <span className="rv-hero__marca-agua" aria-hidden="true">
+        VIAS
+      </span>
 
       <div className="rv-wrap">
         <div className="rv-hero__conteudo">
@@ -236,7 +251,7 @@ function Hero() {
               <MessageCircle aria-hidden="true" size={18} />
               Agende pelo WhatsApp
             </a>
-            <a className="rv-btn rv-btn--contorno-claro" href="#unidades">
+            <a className="rv-btn rv-btn--fantasma" href="#unidades">
               <MapPin aria-hidden="true" size={18} />
               Unidade mais próxima
             </a>
@@ -267,16 +282,20 @@ function Diferenciais() {
   const revelar = useRevelar<HTMLDivElement>();
 
   return (
-    <section className="rv-secao rv-secao--grafite" aria-labelledby="rv-diferenciais-titulo">
+    <section className="rv-secao" aria-labelledby="rv-diferenciais-titulo">
       <div className="rv-wrap">
         <h2 id="rv-diferenciais-titulo" className="rv-chapeu rv-chapeu--bloco">
           Por que a Rede Vias
         </h2>
-        <div ref={revelar.ref} className={`rv-diferenciais ${revelar.className}`}>
-          {DIFERENCIAIS.map((item) => {
+        <div ref={revelar.ref} className="rv-diferenciais">
+          {DIFERENCIAIS.map((item, i) => {
             const Icone = ICONES_DIFERENCIAIS[item.id];
             return (
-              <div key={item.id} className="rv-diferencial">
+              <div
+                key={item.id}
+                className={`rv-cartao rv-diferencial ${revelar.className}`}
+                style={{ "--i": i } as React.CSSProperties}
+              >
                 <span className="rv-diferencial__icone">
                   <Icone />
                 </span>
@@ -301,19 +320,25 @@ function Servicos() {
   const revelar = useRevelar<HTMLDivElement>();
 
   return (
-    <section id="servicos" className="rv-secao rv-secao--claro" aria-labelledby="rv-servicos-titulo">
+    <section id="servicos" className="rv-secao" aria-labelledby="rv-servicos-titulo">
       <div className="rv-wrap">
-        <p className="rv-chapeu">Nossos serviços</p>
-        <TituloDuplo
-          id="rv-servicos-titulo"
-          linha1="Tudo o que seu carro precisa,"
-          linha2="em um só lugar."
-        />
-        <div ref={revelar.ref} className={`rv-servicos ${revelar.className}`}>
-          {SERVICOS.map((servico) => {
+        <div className="rv-secao__cabecalho">
+          <p className="rv-chapeu">Nossos serviços</p>
+          <TituloDuplo
+            id="rv-servicos-titulo"
+            linha1="Tudo o que seu carro precisa,"
+            linha2="em um só lugar."
+          />
+        </div>
+        <div ref={revelar.ref} className="rv-servicos">
+          {SERVICOS.map((servico, i) => {
             const Icone = ICONES_SERVICOS[servico.id];
             return (
-              <article key={servico.id} className="rv-servico">
+              <article
+                key={servico.id}
+                className={`rv-cartao rv-servico ${revelar.className}`}
+                style={{ "--i": i } as React.CSSProperties}
+              >
                 <span className="rv-servico__icone">
                   <Icone />
                 </span>
@@ -336,7 +361,7 @@ function Prevencao() {
   const revelar = useRevelar<HTMLDivElement>();
 
   return (
-    <section id="sobre" className="rv-secao rv-secao--escuro" aria-labelledby="rv-sobre-titulo">
+    <section id="sobre" className="rv-secao" aria-labelledby="rv-sobre-titulo">
       <div className="rv-wrap">
         <div ref={revelar.ref} className={`rv-prevencao ${revelar.className}`}>
           <div>
@@ -380,8 +405,8 @@ function Prevencao() {
             </div>
           </div>
 
-          <figure className="rv-prevencao__figura" style={{ margin: 0 }}>
-            <FotoOuCena foto={FOTOS.prevencao} />
+          <figure className="rv-prevencao__figura">
+            <FotoOuCena foto={FOTOS.prevencao} variante="acostamento" />
           </figure>
         </div>
       </div>
@@ -390,142 +415,181 @@ function Prevencao() {
 }
 
 // ---------------------------------------------------------------------------
-// Unidades — abas para não empurrar a página em um scroll longo
+// Unidades — lista sempre visível à esquerda, painel com mapa à direita
 // ---------------------------------------------------------------------------
 
 function Unidades() {
   const [ativa, setAtiva] = useState(UNIDADES[0].id);
-  const unidade = UNIDADES.find((u) => u.id === ativa) ?? UNIDADES[0];
-  const refsAbas = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [mapaCarregado, setMapaCarregado] = useState(false);
+  // null = ainda sondando. O iframe só é montado quando o Google responde de
+  // fato: um iframe bloqueado (bloqueador de anúncios, rede corporativa, país
+  // com restrição) pinta a própria página de erro em branco, e nem `onLoad`
+  // nem filtro de CSS conseguem esconder isso. Sondar antes é o único jeito
+  // de garantir que ninguém veja um retângulo branco no meio da seção.
+  const [mapaDisponivel, setMapaDisponivel] = useState<boolean | null>(null);
 
-  // Setas ↔ percorrem as abas, como manda o padrão ARIA de tablist.
+  useEffect(() => {
+    let vivo = true;
+    fetch("https://www.google.com/maps", { mode: "no-cors", cache: "no-store" })
+      .then(() => vivo && setMapaDisponivel(true))
+      .catch(() => vivo && setMapaDisponivel(false));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const unidade = UNIDADES.find((u) => u.id === ativa) ?? UNIDADES[0];
+  const refsItens = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const trocarUnidade = (id: string) => {
+    setMapaCarregado(false); // o novo iframe recomeça escondido
+    setAtiva(id);
+  };
+
+  // Setas ↕/↔ percorrem a lista, como manda o padrão ARIA de tablist.
   const aoTeclar = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     const indice = UNIDADES.findIndex((u) => u.id === ativa);
     let proximo: number | null = null;
-    if (e.key === "ArrowRight") proximo = (indice + 1) % UNIDADES.length;
-    if (e.key === "ArrowLeft") proximo = (indice - 1 + UNIDADES.length) % UNIDADES.length;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") proximo = (indice + 1) % UNIDADES.length;
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft")
+      proximo = (indice - 1 + UNIDADES.length) % UNIDADES.length;
     if (e.key === "Home") proximo = 0;
     if (e.key === "End") proximo = UNIDADES.length - 1;
     if (proximo === null) return;
     e.preventDefault();
     const id = UNIDADES[proximo].id;
-    setAtiva(id);
-    refsAbas.current[id]?.focus();
+    trocarUnidade(id);
+    refsItens.current[id]?.focus();
   };
 
   return (
-    <section id="unidades" className="rv-secao rv-secao--claro" aria-labelledby="rv-unidades-titulo">
+    <section id="unidades" className="rv-secao" aria-labelledby="rv-unidades-titulo">
       <div className="rv-wrap">
-        <p className="rv-chapeu">Nossas unidades</p>
-        <TituloDuplo
-          id="rv-unidades-titulo"
-          linha1="Procure uma Rede Vias"
-          linha2="perto de você!"
-        />
-
-        <div className="rv-abas" role="tablist" aria-label="Escolha uma unidade">
-          {UNIDADES.map((u) => (
-            <button
-              key={u.id}
-              type="button"
-              role="tab"
-              id={`aba-${u.id}`}
-              aria-selected={u.id === ativa}
-              aria-controls={`painel-${u.id}`}
-              tabIndex={u.id === ativa ? 0 : -1}
-              ref={(el) => {
-                refsAbas.current[u.id] = el;
-              }}
-              className="rv-aba"
-              onClick={() => setAtiva(u.id)}
-              onKeyDown={aoTeclar}
-            >
-              <MapPin className="rv-aba__pin" aria-hidden="true" />
-              {u.nome}
-            </button>
-          ))}
+        <div className="rv-secao__cabecalho">
+          <p className="rv-chapeu">Nossas unidades</p>
+          <TituloDuplo
+            id="rv-unidades-titulo"
+            linha1="Procure uma Rede Vias"
+            linha2="perto de você!"
+          />
         </div>
 
-        <div
-          role="tabpanel"
-          id={`painel-${unidade.id}`}
-          aria-labelledby={`aba-${unidade.id}`}
-          tabIndex={0}
-          className="rv-unidade"
-        >
-          <div className="rv-unidade__dados">
-            <h3 className="rv-unidade__nome">
-              Rede Vias <span>{unidade.nome}</span>
-            </h3>
-
-            <p className="rv-unidade__linha">
-              <MapPin aria-hidden="true" />
-              <span>
-                {unidade.endereco}
-                <span className="rv-unidade__complemento">{unidade.complemento}</span>
-              </span>
-            </p>
-
-            <p className="rv-unidade__linha">
-              <Phone aria-hidden="true" />
-              <a
-                href={linkTelefone(unidade.telefone)}
-                style={{ color: "inherit", textDecoration: "none" }}
+        <div className="rv-unidades">
+          <div
+            className="rv-unidades__lista"
+            role="tablist"
+            aria-orientation="vertical"
+            aria-label="Escolha uma unidade"
+          >
+            {UNIDADES.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                role="tab"
+                id={`aba-${u.id}`}
+                aria-selected={u.id === ativa}
+                aria-controls="painel-unidade"
+                tabIndex={u.id === ativa ? 0 : -1}
+                ref={(el) => {
+                  refsItens.current[u.id] = el;
+                }}
+                className="rv-unidade-item"
+                onClick={() => trocarUnidade(u.id)}
+                onKeyDown={aoTeclar}
               >
-                {unidade.telefone}
-              </a>
-            </p>
-
-            <div className="rv-unidade__acoes">
-              <a
-                className="rv-btn rv-btn--whats"
-                href={linkWhatsApp(
-                  unidade.whatsapp,
-                  `Olá! Gostaria de agendar um serviço na ${MARCA.nome} ${unidade.nome}.`,
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle aria-hidden="true" size={18} />
-                WhatsApp
-              </a>
-              <a
-                className="rv-btn rv-btn--contorno-escuro"
-                href={linkMapa(unidade.mapaQuery)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Navigation aria-hidden="true" size={18} />
-                Como chegar
-              </a>
-            </div>
+                <span className="rv-unidade-item__topo">
+                  <MapPin aria-hidden="true" />
+                  <span className="rv-unidade-item__nome">{u.nome}</span>
+                </span>
+                <span className="rv-unidade-item__endereco">
+                  {u.endereco}
+                  <br />
+                  {u.complemento}
+                </span>
+                <span className="rv-unidade-item__tel">{u.telefone}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="rv-unidade__mapa">
-            <div className="rv-unidade__mapa-alternativa" aria-hidden="true">
-              <MapPin />
-              <strong>Rede Vias {unidade.nome}</strong>
-              <span>
-                {unidade.endereco} — {unidade.cidade}
-              </span>
-            </div>
-            {/* key força um iframe novo por unidade; loading=lazy evita baixar
-                o mapa antes da seção aparecer. */}
-            <iframe
-              key={unidade.id}
-              title={`Mapa da unidade ${unidade.nome}`}
-              src={embedMapa(unidade.mapaQuery)}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-            <a
-              className="rv-unidade__mapa-link"
-              href={linkMapa(unidade.mapaQuery)}
-              target="_blank"
-              rel="noopener noreferrer"
+          <div
+            role="tabpanel"
+            id="painel-unidade"
+            aria-labelledby={`aba-${unidade.id}`}
+            tabIndex={0}
+            className="rv-unidade-painel"
+          >
+            <div
+              className={`rv-unidade-painel__mapa ${mapaCarregado ? "rv-unidade-painel__mapa--carregado" : ""}`}
             >
-              Ver no Google Maps
-            </a>
+              <div className="rv-unidade-painel__alternativa">
+                <span className="rv-unidade-painel__pino" aria-hidden="true">
+                  <MapPin />
+                </span>
+                <strong>Rede Vias {unidade.nome}</strong>
+                <span className="rv-unidade-painel__alternativa-end">
+                  {unidade.endereco} — {unidade.cidade}
+                </span>
+                <a
+                  className="rv-unidade-painel__alternativa-link"
+                  href={linkMapa(unidade.mapaQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Abrir no Google Maps
+                </a>
+              </div>
+              {/* key força um iframe novo por unidade; loading=lazy evita baixar
+                  o mapa antes da seção aparecer. */}
+              {mapaDisponivel && (
+                <iframe
+                  key={unidade.id}
+                  title={`Mapa da unidade ${unidade.nome}`}
+                  src={embedMapa(unidade.mapaQuery)}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  onLoad={() => setMapaCarregado(true)}
+                />
+              )}
+            </div>
+
+            <div className="rv-unidade-painel__dados">
+              <h3 className="rv-unidade-painel__nome">
+                Rede Vias <span>{unidade.nome}</span>
+              </h3>
+
+              <p className="rv-unidade-painel__linha">
+                <MapPin aria-hidden="true" />
+                <span>
+                  {unidade.endereco}
+                  <span className="rv-unidade-painel__complemento">{unidade.complemento}</span>
+                </span>
+              </p>
+
+              <p className="rv-unidade-painel__linha">
+                <Phone aria-hidden="true" />
+                <a href={linkTelefone(unidade.telefone)}>{unidade.telefone}</a>
+              </p>
+
+              <div className="rv-unidade-painel__acoes">
+                <a
+                  className="rv-btn rv-btn--whats"
+                  href={linkWhatsApp(unidade.whatsapp, msgUnidade(unidade.nome))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle aria-hidden="true" size={18} />
+                  WhatsApp
+                </a>
+                <a
+                  className="rv-btn rv-btn--fantasma"
+                  href={linkMapa(unidade.mapaQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Navigation aria-hidden="true" size={18} />
+                  Como chegar
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -538,31 +602,35 @@ function Unidades() {
 // ---------------------------------------------------------------------------
 
 function ChamadaFinal() {
+  const revelar = useRevelar<HTMLDivElement>();
+
   return (
-    <section id="contato" className="rv-secao rv-cta-final" aria-labelledby="rv-contato-titulo">
+    <section id="contato" className="rv-secao" aria-labelledby="rv-contato-titulo">
       <div className="rv-wrap">
-        <TituloDuplo
-          id="rv-contato-titulo"
-          linha1="O fim de semana tá chegando!"
-          linha2="Já fez a sua revisão?"
-        />
-        <p className="rv-cta-final__texto">
-          Fale com a unidade mais próxima e garanta a revisão antes de pegar a estrada.
-        </p>
-        <div className="rv-cta-final__ctas">
-          <a
-            className="rv-btn rv-btn--primario"
-            href={CTA_WHATSAPP}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <MessageCircle aria-hidden="true" size={18} />
-            Agende pelo WhatsApp
-          </a>
-          <a className="rv-btn rv-btn--contorno-claro" href="#unidades">
-            <ShieldCheck aria-hidden="true" size={18} />
-            Ver as unidades
-          </a>
+        <div ref={revelar.ref} className={`rv-cta-final ${revelar.className}`}>
+          <TituloDuplo
+            id="rv-contato-titulo"
+            linha1="O fim de semana tá chegando!"
+            linha2="Já fez a sua revisão?"
+          />
+          <p className="rv-cta-final__texto">
+            Fale com a unidade mais próxima e garanta a revisão antes de pegar a estrada.
+          </p>
+          <div className="rv-cta-final__ctas">
+            <a
+              className="rv-btn rv-btn--primario"
+              href={CTA_WHATSAPP}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle aria-hidden="true" size={18} />
+              Agende pelo WhatsApp
+            </a>
+            <a className="rv-btn rv-btn--fantasma" href="#unidades">
+              <ShieldCheck aria-hidden="true" size={18} />
+              Ver as unidades
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -580,7 +648,7 @@ function Rodape() {
         <div className="rv-rodape__grade">
           <div>
             <RedeViasLogo style={{ fontSize: "1.05rem" }} />
-            <p className="rv-apoio" style={{ marginTop: "1rem", maxWidth: "26rem", fontSize: "0.95rem" }}>
+            <p className="rv-apoio" style={{ marginTop: "1.25rem", maxWidth: "26rem", fontSize: "0.95rem" }}>
               {MARCA.descricao}
             </p>
             <div className="rv-rodape__social">
@@ -627,10 +695,7 @@ function Rodape() {
                   {u.complemento}
                   <br />
                   <a
-                    href={linkWhatsApp(
-                      u.whatsapp,
-                      `Olá! Gostaria de agendar um serviço na ${MARCA.nome} ${u.nome}.`,
-                    )}
+                    href={linkWhatsApp(u.whatsapp, msgUnidade(u.nome))}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -663,13 +728,20 @@ function Rodape() {
 export default function Landing() {
   return (
     <div className="rv-landing">
+      {/* Luz ambiente fixa: é ela que dá profundidade à página sem precisar
+          trocar a cor de fundo a cada seção. */}
+      <div className="rv-ambiente" aria-hidden="true">
+        <div className="rv-ambiente__luz" />
+        <div className="rv-ambiente__malha" />
+        <div className="rv-ambiente__grao" />
+      </div>
+
       <a className="rv-pular-para-conteudo" href="#inicio">
         Pular para o conteúdo
       </a>
       <Header />
       <main>
         <Hero />
-        <div className="rv-faixa" />
         <Diferenciais />
         <Servicos />
         <Prevencao />
