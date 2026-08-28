@@ -1,122 +1,1223 @@
-/* BJR Centro Automotivo — landing page design system.
-   Scoped entirely under .bjr-landing so it never touches the CRM app's
-   shared theme tokens (--background, --primary, etc. in index.css). */
+/* ---------------------------------------------------------------------------
+   Rede Vias Serviços Automotivos — sistema visual da homepage.
 
-.bjr-landing {
-  --bjr-bg: #0d0f11;
-  --bjr-bg-alt: #111417;
-  --bjr-surface: #1b1f23;
-  --bjr-surface-2: #242a2f;
-  --bjr-border: #343b41;
-  --bjr-border-soft: #262c31;
-  --bjr-text: #eceef0;
-  --bjr-text-muted: #b6bcc2;
-  --bjr-amber: #f2a900;
-  --bjr-amber-deep: #c98600;
-  --bjr-redline: #d62828;
-  --bjr-redline-deep: #a81f1f;
-  --bjr-green: #2e7d4f;
-  --bjr-green-deep: #21603a;
+   Tudo fica sob .rv-landing para não vazar nos tokens do CRM (--background,
+   --primary etc. em index.css).
 
-  background: var(--bjr-bg);
-  color: var(--bjr-text);
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+   Contraste (WCAG AA), pares checados:
+     #FFFFFF sobre #E10600 ......... 4,97:1  ✓ texto normal
+     #E10600 sobre #FFFFFF ......... 4,97:1  ✓ texto normal
+     #FF4438 sobre #0A0A0A ......... 5,79:1  ✓ texto normal em fundo preto
+     #E10600 sobre #0A0A0A ......... 4,22:1  — só título grande (≥24px bold)
+     #B9BDC4 sobre #0A0A0A ........ 10,50:1  ✓ texto de apoio no escuro
+     #4B4F55 sobre #F4F4F5 ......... 7,50:1  ✓ texto de apoio no claro
+   Por isso existem dois vermelhos: --rv-red para fundo claro e títulos
+   grandes, --rv-red-bright para texto pequeno sobre preto.
+--------------------------------------------------------------------------- */
+
+.rv-landing {
+  --rv-black: #0a0a0a;
+  --rv-black-2: #121316;
+  --rv-graphite: #1a1c20;
+  --rv-graphite-2: #23262b;
+  --rv-red: #e10600;
+  --rv-red-deep: #b30500;
+  --rv-red-bright: #ff4438;
+  --rv-white: #ffffff;
+  --rv-off: #f4f4f5;
+  --rv-ink: #111214;
+  --rv-ink-muted: #4b4f55;
+  --rv-mist: #b9bdc4;
+  --rv-line-dark: rgba(255, 255, 255, 0.14);
+  --rv-line-light: rgba(17, 18, 20, 0.12);
+  --rv-whats: #0d7a5f;
+  --rv-whats-hover: #0a6650;
+  --rv-header-h: 4.5rem;
+
+  --rv-font-display: "Barlow Semi Condensed", "Barlow", "Inter",
+    ui-sans-serif, system-ui, sans-serif;
+  --rv-font-body: "Barlow", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  background: var(--rv-black);
+  color: var(--rv-white);
+  font-family: var(--rv-font-body);
+  font-size: 16px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-.bjr-landing .bjr-display {
-  font-family: "Oxanium", ui-sans-serif, system-ui, sans-serif;
+.rv-landing *,
+.rv-landing *::before,
+.rv-landing *::after {
+  box-sizing: border-box;
 }
 
-.bjr-landing a:focus-visible,
-.bjr-landing button:focus-visible {
-  outline: 2px solid var(--bjr-amber);
+/* Tipografia dos títulos: precisa de especificidade real para vencer o
+   preflight do Tailwind, que zera font-weight/font-size de h1..h6. */
+.rv-landing h1,
+.rv-landing h2,
+.rv-landing h3,
+.rv-landing h4 {
+  font-family: var(--rv-font-display);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+/* Já as margens vão em :where() (especificidade zero) para que as regras de
+   componente mais abaixo — a margem de um título de rodapé, o espaço de um
+   parágrafo — vençam sem precisar de !important. */
+:where(.rv-landing) :where(h1, h2, h3, h4, p) {
+  margin: 0;
+}
+
+.rv-landing :focus-visible {
+  outline: 3px solid var(--rv-red-bright);
   outline-offset: 3px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
-/* Brushed-steel micro-texture: thin diagonal hairlines at very low opacity,
-   pure CSS gradient (no image request). */
-.bjr-brushed {
-  background-image: repeating-linear-gradient(
-    112deg,
-    rgba(255, 255, 255, 0.025) 0px,
-    rgba(255, 255, 255, 0.025) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+.rv-landing section {
+  scroll-margin-top: var(--rv-header-h);
 }
 
-.bjr-vignette {
-  background-image:
-    radial-gradient(ellipse 60% 50% at 18% 15%, rgba(242, 169, 0, 0.10), transparent 60%),
-    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(214, 40, 40, 0.08), transparent 55%);
+/* --- Estrutura ----------------------------------------------------------- */
+
+.rv-wrap {
+  width: 100%;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
 }
 
-/* Section divider — the one recurring structural motif, kept intentionally quiet
-   so it supports the gauge signature rather than competing with it. */
-.bjr-divider {
-  height: 2px;
+@media (min-width: 768px) {
+  .rv-wrap {
+    padding: 0 2rem;
+  }
+}
+
+.rv-secao {
+  padding: 3.5rem 0;
+}
+
+@media (min-width: 768px) {
+  .rv-secao {
+    padding: 5rem 0;
+  }
+}
+
+.rv-secao--claro {
+  background: var(--rv-off);
+  color: var(--rv-ink);
+}
+
+.rv-secao--escuro {
+  background: var(--rv-black);
+  color: var(--rv-white);
+}
+
+.rv-secao--grafite {
+  background: var(--rv-graphite);
+  color: var(--rv-white);
+}
+
+/* Faixa vermelha fina que separa blocos — o "risco" recorrente das peças. */
+.rv-faixa {
+  height: 4px;
+  background: linear-gradient(90deg, var(--rv-red) 0%, var(--rv-red) 55%, var(--rv-red-deep) 100%);
+}
+
+.rv-pular-para-conteudo {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--rv-white);
+  color: var(--rv-ink);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+}
+
+.rv-pular-para-conteudo:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/* --- Títulos ------------------------------------------------------------- */
+
+/* O recurso recorrente da marca: linha 1 neutra + linha 2 vermelha. */
+.rv-titulo {
+  font-size: clamp(1.85rem, 6vw, 3.15rem);
+}
+
+.rv-titulo--hero {
+  font-size: clamp(2.3rem, 9.2vw, 4.6rem);
+}
+
+/* text-wrap: balance divide as linhas grandes em partes equilibradas — é o que
+   evita a órfã ("...MAIS / LONGE.") e reproduz a quebra das peças. Navegador
+   sem suporte simplesmente quebra como sempre. */
+.rv-titulo__l1,
+.rv-titulo__l2 {
+  display: block;
+  text-wrap: balance;
+}
+
+.rv-titulo__l2 {
+  color: var(--rv-red);
+}
+
+/* Sobre preto, o vermelho da linha 2 só é usado em corpo grande (≥24px bold),
+   onde 4,22:1 já satisfaz o AA para texto largo. */
+.rv-secao--escuro .rv-titulo__l2,
+.rv-secao--grafite .rv-titulo__l2,
+.rv-hero .rv-titulo__l2 {
+  color: var(--rv-red-bright);
+}
+
+.rv-chapeu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--rv-font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rv-red-bright);
+}
+
+.rv-secao--claro .rv-chapeu {
+  color: var(--rv-red);
+}
+
+.rv-chapeu::before {
+  content: "";
+  width: 1.75rem;
+  height: 3px;
+  background: currentColor;
+}
+
+/* Variante usada quando o chapéu é o próprio título da seção (sem headline
+   grande abaixo): ocupa a linha inteira e reserva o espaço do bloco seguinte. */
+.rv-chapeu--bloco {
+  display: flex;
+  margin-bottom: 1.5rem;
+}
+
+.rv-apoio {
+  color: var(--rv-mist);
+  font-size: 1.02rem;
+}
+
+.rv-secao--claro .rv-apoio {
+  color: var(--rv-ink-muted);
+}
+
+/* --- Botões -------------------------------------------------------------- */
+
+.rv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.8rem 1.4rem;
+  border: 2px solid transparent;
+  border-radius: 0.4rem;
+  font-family: var(--rv-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.rv-btn:hover {
+  transform: translateY(-1px);
+}
+
+.rv-btn--primario {
+  background: var(--rv-red);
+  color: var(--rv-white);
+}
+
+.rv-btn--primario:hover {
+  background: var(--rv-red-deep);
+}
+
+.rv-btn--whats {
+  background: var(--rv-whats);
+  color: var(--rv-white);
+}
+
+.rv-btn--whats:hover {
+  background: var(--rv-whats-hover);
+}
+
+.rv-btn--contorno-claro {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: var(--rv-white);
+  background: transparent;
+}
+
+.rv-btn--contorno-claro:hover {
+  background: var(--rv-white);
+  color: var(--rv-ink);
+}
+
+.rv-btn--contorno-escuro {
+  border-color: var(--rv-ink);
+  color: var(--rv-ink);
+  background: transparent;
+}
+
+.rv-btn--contorno-escuro:hover {
+  background: var(--rv-ink);
+  color: var(--rv-white);
+}
+
+.rv-btn--bloco {
+  width: 100%;
+}
+
+/* --- Logotipo ------------------------------------------------------------ */
+
+.rv-logo {
+  display: inline-block;
+  font-family: var(--rv-font-display);
+  font-size: 1rem; /* âncora de escala: tudo abaixo é relativo a este valor */
+  line-height: 1;
+  user-select: none;
+}
+
+.rv-logo__wordmark {
+  display: block;
+}
+
+.rv-logo__rede {
+  display: block;
+  font-size: 1.28em;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.11em;
+  color: var(--rv-white);
+}
+
+/* inline-block para a caixa encolher até o "VIAS": é o que ancora a curva
+   junto do "S" em vez de jogá-la na borda direita do logotipo. O padding
+   reserva o espaço da curva dentro da caixa, sem overflow. */
+.rv-logo__linha-vias {
+  position: relative;
+  display: inline-block;
+  padding-right: 1.2em;
+  margin-top: 0.04em;
+}
+
+.rv-logo__vias {
+  display: block;
+  font-size: 2.1em;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--rv-red);
+}
+
+/* A curva de rodovia sai do "S" e sobe para a direita, como nas peças. */
+.rv-logo__curva {
+  position: absolute;
+  right: -0.06em;
+  bottom: 0.02em;
+  width: 1.8em;
+  height: 1em;
+  color: var(--rv-red);
+  pointer-events: none;
+}
+
+.rv-logo__tagline {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-top: 0.16em;
+}
+
+.rv-logo__tagline-texto {
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.185em;
+  color: var(--rv-white);
+  white-space: nowrap;
+}
+
+.rv-logo__bandeira {
+  width: 1.05em;
+  height: auto;
+  flex: none;
+  border-radius: 2px;
+}
+
+/* Sobre fundo claro o "REDE" e a assinatura viram pretos. */
+.rv-logo--escuro .rv-logo__rede,
+.rv-logo--escuro .rv-logo__tagline-texto {
+  color: var(--rv-ink);
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+.rv-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10, 10, 10, 0.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rv-line-dark);
+}
+
+.rv-header__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: var(--rv-header-h);
+}
+
+.rv-header__logo {
+  font-size: 0.78rem;
+  flex: none;
+}
+
+@media (min-width: 480px) {
+  .rv-header__logo {
+    font-size: 0.9rem;
+  }
+}
+
+/* Nav e ações completas só a partir de 1024px; abaixo disso vale o hambúrguer.
+   As regras base vêm antes da media query para que ela sempre vença. */
+.rv-nav {
+  display: none;
+}
+
+.rv-header__acoes {
+  display: none;
+}
+
+.rv-header__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 2px solid var(--rv-line-dark);
+  border-radius: 0.4rem;
+  color: var(--rv-white);
+  padding: 0.55rem 0.7rem;
+  font-family: var(--rv-font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.rv-nav__link {
+  font-family: var(--rv-font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rv-white);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.rv-nav__link:hover {
+  color: var(--rv-red-bright);
+  border-bottom-color: var(--rv-red);
+}
+
+@media (min-width: 1024px) {
+  .rv-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+  }
+
+  .rv-header__acoes {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .rv-header__acoes .rv-btn {
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .rv-header__menu-btn {
+    display: none;
+  }
+}
+
+/* Painel do menu mobile */
+.rv-menu-mobile {
+  border-top: 1px solid var(--rv-line-dark);
+  background: var(--rv-black);
+  padding: 1rem 0 1.5rem;
+}
+
+.rv-menu-mobile__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.rv-menu-mobile__link {
+  display: block;
+  padding: 0.85rem 0.25rem;
+  border-bottom: 1px solid var(--rv-line-dark);
+  font-family: var(--rv-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rv-white);
+  text-decoration: none;
+}
+
+.rv-menu-mobile__acoes {
+  display: grid;
+  gap: 0.6rem;
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+
+.rv-hero {
+  position: relative;
+  isolation: isolate;
+  background: var(--rv-black);
+  overflow: hidden;
+}
+
+.rv-hero__fundo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.rv-hero__fundo > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Véu escuro: garante o contraste do texto sobre qualquer foto que entre. */
+.rv-hero__veu {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(
-    90deg,
-    transparent,
-    var(--bjr-amber) 20%,
-    var(--bjr-redline) 50%,
-    var(--bjr-amber) 80%,
-    transparent
-  );
+      100deg,
+      rgba(10, 10, 10, 0.92) 0%,
+      rgba(10, 10, 10, 0.72) 45%,
+      rgba(10, 10, 10, 0.22) 100%
+    ),
+    linear-gradient(0deg, rgba(10, 10, 10, 0.8) 0%, rgba(10, 10, 10, 0) 42%);
+}
+
+.rv-hero__conteudo {
+  padding: 3rem 0 3.5rem;
+  max-width: 48rem;
+}
+
+@media (min-width: 768px) {
+  .rv-hero__conteudo {
+    padding: 5.5rem 0 6rem;
+  }
+}
+
+.rv-hero__texto {
+  margin: 1.6rem 0 2rem;
+  max-width: 34rem;
+  font-size: 1.05rem;
+  color: var(--rv-mist);
+}
+
+.rv-hero__ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .rv-hero__ctas {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.rv-hero__selo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rv-line-dark);
+  font-size: 0.9rem;
+  color: var(--rv-mist);
+}
+
+.rv-hero__selo strong {
+  color: var(--rv-white);
+  font-family: var(--rv-font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* --- Diferenciais -------------------------------------------------------- */
+
+.rv-diferenciais {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .rv-diferenciais {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .rv-diferenciais {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.rv-diferencial {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.15rem 1.15rem;
+  background: var(--rv-black-2);
+  border: 1px solid var(--rv-line-dark);
+  border-radius: 0.6rem;
+}
+
+.rv-diferencial__icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 2px solid var(--rv-red);
+  color: var(--rv-red-bright);
+}
+
+.rv-diferencial__icone svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.rv-diferencial__titulo {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.rv-diferencial__desc {
+  font-size: 0.92rem;
+  color: var(--rv-mist);
+  line-height: 1.35;
+}
+
+/* --- Serviços ------------------------------------------------------------ */
+
+.rv-servicos {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 2.25rem;
+}
+
+@media (min-width: 768px) {
+  .rv-servicos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+.rv-servico {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.25rem 1rem;
+  background: var(--rv-white);
+  border: 1px solid var(--rv-line-light);
+  border-radius: 0.6rem;
+  /* Faixa vermelha por dentro da borda: acompanha o raio do card, ao
+     contrário de um border-bottom, que descola nos cantos arredondados. */
+  box-shadow: inset 0 -3px 0 0 var(--rv-red);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.rv-servico:hover {
+  transform: translateY(-3px);
+  box-shadow: inset 0 -3px 0 0 var(--rv-red), 0 14px 30px -18px rgba(0, 0, 0, 0.55);
+}
+
+.rv-servico__icone {
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 0.5rem;
+  background: var(--rv-ink);
+  color: var(--rv-white);
+}
+
+.rv-servico__icone svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.rv-servico__nome {
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  color: var(--rv-ink);
+}
+
+.rv-servico__desc {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--rv-ink-muted);
+}
+
+/* --- Prevenção / confiança ---------------------------------------------- */
+
+.rv-prevencao {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .rv-prevencao {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 3.5rem;
+  }
+}
+
+.rv-prevencao__figura {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--rv-line-dark);
+  aspect-ratio: 4 / 3;
+}
+
+.rv-prevencao__figura > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rv-prevencao__lista {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.rv-prevencao__item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 1rem;
+  color: var(--rv-mist);
+}
+
+.rv-prevencao__marcador {
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.5rem;
+  background: var(--rv-red);
+  transform: skewX(-18deg);
+}
+
+/* Selo "Revisão em dia, problemas ficam pelo caminho!" */
+.rv-selo-revisao {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--rv-black-2);
+  border-left: 4px solid var(--rv-red);
+  border-radius: 0.4rem;
+}
+
+.rv-selo-revisao__icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--rv-red);
+  color: var(--rv-red-bright);
+}
+
+.rv-selo-revisao__icone svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.rv-selo-revisao__texto {
+  font-family: var(--rv-font-display);
+  font-size: clamp(1.05rem, 3.4vw, 1.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.rv-selo-revisao__texto em {
+  font-style: normal;
+  color: var(--rv-red-bright);
+}
+
+/* --- Unidades (abas) ----------------------------------------------------- */
+
+.rv-abas {
+  display: flex;
+  gap: 0.5rem;
+  margin: 2rem 0 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rv-aba {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--rv-white);
+  border: 2px solid var(--rv-line-light);
+  border-radius: 0.45rem;
+  font-family: var(--rv-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--rv-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.rv-aba:hover {
+  border-color: var(--rv-red);
+}
+
+.rv-aba[aria-selected="true"] {
+  background: var(--rv-red);
+  border-color: var(--rv-red);
+  color: var(--rv-white);
+}
+
+.rv-aba__pin {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+}
+
+.rv-unidade {
+  display: grid;
+  gap: 0;
+  background: var(--rv-white);
+  border: 1px solid var(--rv-line-light);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .rv-unidade {
+    grid-template-columns: 1fr 1.1fr;
+  }
+}
+
+.rv-unidade__dados {
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .rv-unidade__dados {
+    padding: 2rem;
+  }
+}
+
+.rv-unidade__nome {
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  color: var(--rv-ink);
+}
+
+.rv-unidade__nome span {
+  display: block;
+  color: var(--rv-red);
+}
+
+.rv-unidade__linha {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+  color: var(--rv-ink);
+  font-size: 1rem;
+}
+
+.rv-unidade__linha svg {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.22rem;
+  color: var(--rv-red);
+}
+
+.rv-unidade__complemento {
+  display: block;
+  color: var(--rv-ink-muted);
+  font-size: 0.92rem;
+}
+
+.rv-unidade__acoes {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .rv-unidade__acoes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.rv-unidade__mapa {
+  position: relative;
+  min-height: 260px;
+  background: var(--rv-graphite);
+}
+
+/* Fica atrás do iframe: se o mapa não carregar (rede, bloqueio de terceiros),
+   o visitante ainda vê o endereço em vez de um retângulo vazio. */
+.rv-unidade__mapa-alternativa {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  padding: 1.5rem;
+  color: var(--rv-white);
+  text-align: center;
+}
+
+.rv-unidade__mapa-alternativa svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0 auto;
+  color: var(--rv-red-bright);
+}
+
+.rv-unidade__mapa-alternativa strong {
+  font-family: var(--rv-font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rv-unidade__mapa-alternativa span {
+  color: var(--rv-mist);
+  font-size: 0.9rem;
+}
+
+.rv-unidade__mapa iframe {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.rv-unidade__mapa-link {
+  position: absolute;
+  z-index: 2;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  background: var(--rv-white);
+  color: var(--rv-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.35rem;
+  text-decoration: none;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Chamada final ------------------------------------------------------- */
+
+/* Fecho no mesmo tratamento da tarja das peças: fundo preto, linha 1 branca,
+   linha 2 vermelha — o par de maior contraste da paleta (5,79:1). */
+.rv-cta-final {
+  position: relative;
+  overflow: hidden;
+  background: var(--rv-black-2);
+  color: var(--rv-white);
+  text-align: center;
+}
+
+/* Cunhas vermelhas na diagonal, como o grafismo do wrap da picape. */
+.rv-cta-final::before,
+.rv-cta-final::after {
+  content: "";
+  position: absolute;
+  background: var(--rv-red);
+  pointer-events: none;
+}
+
+/* Ficam presas à borda direita, longe da coluna de texto — o grafismo é
+   moldura, o conteúdo continua sobre preto. */
+.rv-cta-final::before {
+  top: -30%;
+  right: -7%;
+  width: 11%;
+  height: 160%;
+  transform: rotate(18deg);
+  opacity: 0.9;
+}
+
+.rv-cta-final::after {
+  top: -30%;
+  right: 7%;
+  width: 4%;
+  height: 160%;
+  transform: rotate(18deg);
   opacity: 0.5;
 }
 
-.bjr-card {
-  background: var(--bjr-surface);
-  border: 1px solid var(--bjr-border-soft);
-  border-radius: 0.75rem;
-  transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+/* Em telas estreitas a coluna de texto ocupa a largura toda: sem grafismo. */
+@media (max-width: 899px) {
+  .rv-cta-final::before,
+  .rv-cta-final::after {
+    display: none;
+  }
 }
 
-.bjr-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--bjr-amber);
-  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+.rv-cta-final > * {
+  position: relative;
+  z-index: 1;
 }
 
-.bjr-plate {
-  font-family: "Oxanium", ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.06em;
+.rv-cta-final .rv-titulo__l2 {
+  color: var(--rv-red-bright);
 }
 
-/* Scroll reveal — final state is the accessible baseline; JS only adds the
-   .in-view class to trigger the transition. */
-.reveal {
+.rv-cta-final__texto {
+  margin: 1rem auto 1.75rem;
+  max-width: 34rem;
+  font-size: 1.05rem;
+  color: var(--rv-mist);
+}
+
+.rv-cta-final__ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+@media (min-width: 480px) {
+  .rv-cta-final__ctas {
+    flex-direction: row;
+  }
+}
+
+
+/* --- Rodapé -------------------------------------------------------------- */
+
+.rv-rodape {
+  background: var(--rv-black);
+  border-top: 1px solid var(--rv-line-dark);
+  padding: 3rem 0 1.5rem;
+}
+
+.rv-rodape__grade {
+  display: grid;
+  gap: 2.25rem;
+}
+
+@media (min-width: 768px) {
+  .rv-rodape__grade {
+    grid-template-columns: 1.3fr 0.8fr 1.4fr;
+    gap: 3rem;
+  }
+}
+
+.rv-rodape__titulo {
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
+  color: var(--rv-white);
+  margin-bottom: 1rem;
+}
+
+.rv-rodape__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.rv-rodape__link {
+  color: var(--rv-mist);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 160ms ease;
+}
+
+.rv-rodape__link:hover {
+  color: var(--rv-red-bright);
+}
+
+.rv-rodape__unidades {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 520px) {
+  .rv-rodape__unidades {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.rv-rodape__unidade {
+  font-size: 0.9rem;
+  color: var(--rv-mist);
+  line-height: 1.4;
+}
+
+.rv-rodape__unidade strong {
+  display: block;
+  font-family: var(--rv-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rv-white);
+}
+
+.rv-rodape__unidade a {
+  color: var(--rv-red-bright);
+  text-decoration: none;
+}
+
+.rv-rodape__unidade a:hover {
+  text-decoration: underline;
+}
+
+.rv-rodape__social {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.rv-rodape__social a {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--rv-line-dark);
+  border-radius: 0.45rem;
+  color: var(--rv-white);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.rv-rodape__social a:hover {
+  background: var(--rv-red);
+  border-color: var(--rv-red);
+}
+
+.rv-rodape__social svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.rv-rodape__base {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rv-line-dark);
+  font-size: 0.85rem;
+  color: var(--rv-mist);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .rv-rodape__base {
+    flex-direction: row;
+    text-align: left;
+  }
+}
+
+.rv-rodape__base a {
+  color: var(--rv-mist);
+  text-decoration: none;
+}
+
+.rv-rodape__base a:hover {
+  color: var(--rv-white);
+}
+
+/* --- Movimento ----------------------------------------------------------- */
+
+.rv-revelar {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 600ms ease, transform 600ms ease;
+  transform: translateY(16px);
+  transition: opacity 550ms ease, transform 550ms ease;
 }
 
-.reveal.in-view {
+.rv-revelar.rv-visivel {
   opacity: 1;
-  transform: translateY(0);
-}
-
-.bjr-needle {
-  transition: transform 900ms cubic-bezier(0.22, 1.2, 0.36, 1);
-}
-
-.bjr-arc-value {
-  transition: stroke-dashoffset 900ms ease-out;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  .rv-landing * {
+    animation: none !important;
+    transition: none !important;
   }
 
-  .bjr-needle,
-  .bjr-arc-value,
-  .bjr-card {
-    transition: none !important;
+  .rv-revelar {
+    opacity: 1;
+    transform: none;
   }
 }
